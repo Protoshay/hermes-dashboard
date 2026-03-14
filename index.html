@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hermes | Weeb Workshop Analytics</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563EB'%3E%3Cpath d='M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238B5CF6'%3E%3Cpath d='M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,196 +23,166 @@
         }
     </script>
     <style>
-        /* ═══ Design System Variables ═══
-           Source: UI Pro Max - Bento Box Grid + Executive Dashboard
-           KPI font: 48px, Card radius: 24px, Hover: scale(1.02)
-           Page bg: #F5F5F7 (Apple-style), Shadow: 0 4px 6px rgba(0,0,0,0.05) */
+        /* ═══ Design System: Dark Premium ═══
+           Source: Gemini Pro analysis of Stockify (1.8K), E-CART Dark, Financial Dashboard
+           Page bg: #0F1117 (dark with blue tint)
+           Card bg: #1A1D27, hover: #1F2333
+           Accents: Purple #8B5CF6, Cyan #06B6D4
+           Radius: 16px, Gap: 20px, Padding: 24px
+           No borders, no shadows. Depth via color only. */
 
-        body { background: #F5F5F7; -webkit-font-smoothing: antialiased; }
+        body { background: #0F1117; -webkit-font-smoothing: antialiased; }
 
         .card {
-            background: #FFFFFF;
+            background: #1A1D27;
             border: none;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.03);
-            border-radius: 24px;
-            padding: 28px;
-            transition: box-shadow 0.3s ease, transform 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            border-radius: 16px;
+            padding: 24px;
+            transition: background 0.2s ease;
         }
-        .card:hover {
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08), 0 8px 16px rgba(0,0,0,0.04);
-            transform: scale(1.015);
-        }
+        .card:hover { background: #1F2333; }
 
-        /* ═══ Card Color System (meaning-based) ═══ */
-        .card-dark {
-            background: linear-gradient(145deg, #1E293B 0%, #0F172A 100%);
-            color: #FFFFFF;
+        /* Accent card variants - used sparingly */
+        .card-hero {
+            background: linear-gradient(135deg, #1E1B4B 0%, #1A1D27 100%);
         }
-        .card-blue { background: linear-gradient(145deg, #EFF6FF 0%, #DBEAFE 100%); }
-        .card-purple { background: linear-gradient(145deg, #F5F3FF 0%, #EDE9FE 100%); }
-        .card-green { background: linear-gradient(145deg, #ECFDF5 0%, #D1FAE5 100%); }
-        .card-amber { background: linear-gradient(145deg, #FFFBEB 0%, #FEF3C7 100%); }
-        .card-pink { background: linear-gradient(145deg, #FDF2F8 0%, #FCE7F3 100%); }
-        .card-cyan { background: linear-gradient(145deg, #ECFEFF 0%, #CFFAFE 100%); }
-        .card-rose { background: linear-gradient(145deg, #FFF1F2 0%, #FFE4E6 100%); }
+        .card-hero:hover { background: linear-gradient(135deg, #23205A 0%, #1F2333 100%); }
 
         .change-badge {
-            display: inline-flex; align-items: center; gap: 2px;
+            display: inline-flex; align-items: center; gap: 3px;
             font-size: 11px; font-family: 'Fira Code', monospace; font-weight: 600;
-            padding: 4px 10px; border-radius: 999px;
+            padding: 4px 10px; border-radius: 8px;
         }
-        .change-up { background: rgba(34,197,94,0.12); color: #16A34A; }
-        .change-down { background: rgba(239,68,68,0.12); color: #DC2626; }
-        .change-flat { background: rgba(148,163,184,0.1); color: #94A3B8; }
-        .card-dark .change-up { background: rgba(34,197,94,0.2); color: #4ADE80; }
-        .card-dark .change-down { background: rgba(239,68,68,0.2); color: #F87171; }
+        .change-up { background: rgba(34,197,94,0.15); color: #4ADE80; }
+        .change-down { background: rgba(239,68,68,0.15); color: #F87171; }
+        .change-flat { background: rgba(148,163,184,0.1); color: #64748B; }
 
-        .tab-active { color: #2563EB !important; border-bottom: 2px solid #2563EB; font-weight: 600 !important; }
-        .period-active { background: #FFFFFF; box-shadow: 0 1px 3px rgba(0,0,0,0.1); color: #0F172A; }
+        .tab-active { color: #8B5CF6 !important; border-bottom: 2px solid #8B5CF6; font-weight: 600 !important; }
 
-        .status-critical { border-left: 4px solid #EF4444; }
-        .status-warning { border-left: 4px solid #F59E0B; }
-        .product-row:nth-child(even) { background: rgba(241,245,249,0.5); }
-        .product-row:hover { background: rgba(219,234,254,0.25); transition: background 0.15s; }
+        .status-critical { border-left: 3px solid #EF4444; }
+        .status-warning { border-left: 3px solid #F59E0B; }
+        .product-row:nth-child(even) { background: rgba(255,255,255,0.02); }
+        .product-row:hover { background: rgba(139,92,246,0.06); transition: background 0.15s; }
 
         .skeleton {
-            background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+            background: linear-gradient(90deg, #1A1D27 25%, #22263A 50%, #1A1D27 75%);
             background-size: 200% 100%;
             animation: shimmer 1.5s ease-in-out infinite;
-            border-radius: 24px;
+            border-radius: 16px;
         }
         @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        .anim { animation: fadeUp 0.5s ease-out both; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .anim { animation: fadeUp 0.4s ease-out both; }
 
-        .revenue-bar-bg { height: 6px; background: #F1F5F9; border-radius: 999px; }
-        .revenue-bar-fill { height: 6px; border-radius: 999px; transition: width 0.6s ease; }
-        .heatmap-cell { width: 14px; height: 14px; border-radius: 3px; transition: transform 0.1s; }
-        .heatmap-cell:hover { transform: scale(1.4); z-index: 10; }
+        .revenue-bar-bg { height: 4px; background: #282D3A; border-radius: 999px; }
+        .revenue-bar-fill { height: 4px; border-radius: 999px; transition: width 0.6s ease; }
 
-        /* ═══ Bento Grid: Revenue Hero ═══ */
-        .bento-revenue {
-            display: grid;
-            grid-template-columns: 5fr 3fr 3fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 16px;
-        }
-        .bento-hero { grid-row: 1 / 3; }
+        /* KPI Grid */
+        .kpi-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+        .kpi-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+        .chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .products-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+        .bottom-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
 
         @media (prefers-reduced-motion: reduce) { .anim { animation: none; } }
         @media print {
-            body { background: white !important; }
-            header { position: static !important; }
+            body { background: #0F1117 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
             .no-print { display: none !important; }
-            .card { box-shadow: none !important; break-inside: avoid; }
+            .card { break-inside: avoid; }
         }
         @media (max-width: 1023px) {
-            .bento-revenue { grid-template-columns: 1fr 1fr !important; }
-            .bento-hero { grid-row: auto; grid-column: 1 / 3; }
-            .bento-5 { grid-template-columns: repeat(3, 1fr) !important; }
+            .kpi-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+            .kpi-grid-5 { grid-template-columns: repeat(3, 1fr) !important; }
             .chart-row, .products-row, .bottom-row { grid-template-columns: 1fr !important; }
-            .col-span-2 { grid-column: span 1 !important; }
         }
         @media (max-width: 767px) {
-            .bento-revenue { grid-template-columns: 1fr !important; }
-            .bento-hero { grid-column: auto; }
-            .bento-5 { grid-template-columns: repeat(2, 1fr) !important; }
+            .kpi-grid-5 { grid-template-columns: repeat(2, 1fr) !important; }
         }
-        @media (max-width: 479px) { .bento-5 { grid-template-columns: 1fr !important; } }
+        @media (max-width: 479px) {
+            .kpi-grid-4, .kpi-grid-5 { grid-template-columns: 1fr !important; }
+        }
     </style>
-<script>window.__HERMES_DATA__ = {"period_days": 30, "generated_at": "2026-03-14T15:43:01.572233+00:00", "sources": {"shopify": true, "amazon": true, "meta": true, "xero": true, "klaviyo": true}, "views": {"overview": {"headline": [{"label": "Net Revenue", "value": 18420.5, "format": "currency_compact", "change": 12.3}, {"label": "Total Orders", "value": 487, "format": "number", "change": 8.1}, {"label": "Blended ROAS", "value": 2.4, "format": "multiplier", "change": -3.2}, {"label": "Inventory Health", "value": "Warning", "format": "status", "detail": "3 SKUs low", "status": "warning"}], "kpis": [{"key": "net_revenue", "label": "Net Revenue", "value": 18420.5, "format": "currency", "group": "revenue", "hero": true, "change": 12.3, "sparkline": [800, 950, 1100, 900, 1200, 1050, 1300], "target": 500000, "progress": 3.7}, {"key": "shopify_revenue", "label": "Shopify Revenue", "value": 2840.0, "format": "currency", "group": "revenue", "change": 45.2, "sparkline": [80, 120, 90, 140, 160, 130, 200], "target": 300000, "progress": 0.9}, {"key": "amazon_us_revenue", "label": "Amazon US Revenue", "value": 12150.0, "format": "currency", "group": "revenue", "change": 8.4, "sparkline": [500, 520, 480, 550, 530, 560, 580], "target": 500000, "progress": 2.4}, {"key": "amazon_uk_revenue", "label": "Amazon UK Revenue", "value": 3430.5, "format": "currency_gbp", "group": "revenue", "change": -2.1, "sparkline": [180, 170, 165, 175, 160, 155, 150], "target": 120000, "progress": 2.9}, {"key": "email_revenue", "label": "Email Revenue", "value": 420.0, "format": "currency", "group": "revenue", "change": 0, "sparkline": [15, 20, 18, 22, 19, 21, 20]}, {"key": "meta_roas", "label": "Meta ROAS", "value": 2.4, "format": "multiplier", "group": "efficiency", "change": -3.2, "sparkline": [2.1, 2.3, 2.5, 2.2, 2.6, 2.3, 2.4]}, {"key": "meta_cpa", "label": "Meta CPA", "value": 14.2, "format": "currency", "group": "efficiency", "change": 5.1, "sparkline": [12, 13, 15, 14, 13, 15, 14], "invert": true}, {"key": "meta_spend", "label": "Meta Spend", "value": 1850.0, "format": "currency", "group": "efficiency", "change": 12.0, "sparkline": [50, 55, 60, 65, 70, 62, 68]}, {"key": "cac", "label": "CAC", "value": 22.5, "format": "currency", "group": "efficiency", "change": -8.3, "sparkline": [28, 26, 24, 25, 23, 22, 22], "invert": true}, {"key": "blended_aov", "label": "Blended AOV", "value": 37.8, "format": "currency", "group": "efficiency", "change": 3.5, "sparkline": [35, 36, 37, 36, 38, 37, 38]}, {"key": "gross_margin", "label": "Gross Margin", "value": 52.3, "format": "percent", "group": "health", "change": 1.2, "sparkline": [50, 51, 52, 51, 53, 52, 52]}, {"key": "total_orders", "label": "Total Orders", "value": 487, "format": "number", "group": "health", "change": 8.1, "sparkline": [20, 22, 18, 25, 21, 24, 23]}, {"key": "returning_pct", "label": "Returning Customers", "value": 18.5, "format": "percent", "group": "health", "change": -2.3, "sparkline": [20, 19, 18, 19, 18, 19, 18]}, {"key": "active_subscribers", "label": "Email Subscribers", "value": 2840, "format": "number", "group": "health", "change": 4.2, "sparkline": [2600, 2650, 2700, 2720, 2760, 2800, 2840]}, {"key": "inventory_alerts", "label": "Inventory Alerts", "value": 3, "format": "number", "group": "health", "change": null, "detail": "2 low stock, 1 OOS", "invert": true}], "daily_series": {"2026-02-13": {"shopify": 85, "amazon_us": 380, "amazon_uk": 120}, "2026-02-14": {"shopify": 92, "amazon_us": 420, "amazon_uk": 115}, "2026-02-15": {"shopify": 78, "amazon_us": 395, "amazon_uk": 130}, "2026-02-16": {"shopify": 105, "amazon_us": 450, "amazon_uk": 125}, "2026-02-17": {"shopify": 110, "amazon_us": 410, "amazon_uk": 118}, "2026-02-18": {"shopify": 95, "amazon_us": 440, "amazon_uk": 122}, "2026-02-19": {"shopify": 88, "amazon_us": 385, "amazon_uk": 128}, "2026-02-20": {"shopify": 102, "amazon_us": 460, "amazon_uk": 135}, "2026-02-21": {"shopify": 115, "amazon_us": 430, "amazon_uk": 140}, "2026-02-22": {"shopify": 98, "amazon_us": 415, "amazon_uk": 132}, "2026-02-23": {"shopify": 120, "amazon_us": 470, "amazon_uk": 138}, "2026-02-24": {"shopify": 108, "amazon_us": 445, "amazon_uk": 142}, "2026-02-25": {"shopify": 95, "amazon_us": 425, "amazon_uk": 130}, "2026-02-26": {"shopify": 112, "amazon_us": 455, "amazon_uk": 145}, "2026-02-27": {"shopify": 125, "amazon_us": 480, "amazon_uk": 148}, "2026-02-28": {"shopify": 130, "amazon_us": 465, "amazon_uk": 135}, "2026-03-01": {"shopify": 118, "amazon_us": 490, "amazon_uk": 140}, "2026-03-02": {"shopify": 105, "amazon_us": 470, "amazon_uk": 138}, "2026-03-03": {"shopify": 135, "amazon_us": 500, "amazon_uk": 145}, "2026-03-04": {"shopify": 140, "amazon_us": 485, "amazon_uk": 150}, "2026-03-05": {"shopify": 128, "amazon_us": 510, "amazon_uk": 142}, "2026-03-06": {"shopify": 145, "amazon_us": 495, "amazon_uk": 148}, "2026-03-07": {"shopify": 138, "amazon_us": 520, "amazon_uk": 155}, "2026-03-08": {"shopify": 150, "amazon_us": 505, "amazon_uk": 150}, "2026-03-09": {"shopify": 142, "amazon_us": 530, "amazon_uk": 158}, "2026-03-10": {"shopify": 155, "amazon_us": 515, "amazon_uk": 152}, "2026-03-11": {"shopify": 148, "amazon_us": 540, "amazon_uk": 160}, "2026-03-12": {"shopify": 160, "amazon_us": 525, "amazon_uk": 155}, "2026-03-13": {"shopify": 165, "amazon_us": 550, "amazon_uk": 162}, "2026-03-14": {"shopify": 170, "amazon_us": 535, "amazon_uk": 158}}, "channel_breakdown": {"Shopify": 2840, "Amazon US": 12150, "Amazon UK": 3430}, "channel_pct": {"Shopify": 15.4, "Amazon US": 65.9, "Amazon UK": 18.6}, "top_products": [{"name": "One Piece Zoro Keychain Bundle", "channel": "Amazon US", "revenue": 2840.0, "units": 142, "conversion_rate": 12.5, "trend": "up"}, {"name": "Demon Slayer Tanjiro Metal Tag", "channel": "Amazon US", "revenue": 2210.0, "units": 118, "conversion_rate": 10.8, "trend": "up"}, {"name": "Naruto Akatsuki Pin Set", "channel": "Amazon US", "revenue": 1890.0, "units": 95, "conversion_rate": 9.2, "trend": "flat"}, {"name": "One Piece Luffy Gear 5 Keychain", "channel": "Shopify", "revenue": 1650.0, "units": 82, "conversion_rate": 3.8, "trend": "up"}, {"name": "Attack on Titan Wings Bundle", "channel": "Amazon UK", "revenue": 1420.0, "units": 71, "conversion_rate": 8.5, "trend": "down"}, {"name": "Jujutsu Kaisen Sukuna Ring", "channel": "Amazon US", "revenue": 1180.0, "units": 59, "conversion_rate": 7.2, "trend": "up"}, {"name": "Dragon Ball Z Capsule Keychain", "channel": "Amazon UK", "revenue": 980.0, "units": 52, "conversion_rate": 6.8, "trend": "flat"}, {"name": "My Hero Academia Deku Tag", "channel": "Shopify", "revenue": 750.0, "units": 38, "conversion_rate": 2.9, "trend": "down"}, {"name": "Chainsaw Man Pochita Bundle", "channel": "Amazon US", "revenue": 620.0, "units": 31, "conversion_rate": 5.4, "trend": "up"}, {"name": "Spy x Family Anya Sticker Pack", "channel": "Shopify", "revenue": 480.0, "units": 48, "conversion_rate": 2.1, "trend": "flat"}], "bottom_products": [{"name": "Bleach Ichigo Keychain v1", "channel": "Amazon US", "revenue": 45.0, "units": 3, "conversion_rate": 1.2, "trend": "down"}, {"name": "Naruto Hinata Pin (old design)", "channel": "Amazon UK", "revenue": 38.0, "units": 2, "conversion_rate": 0.8, "trend": "down"}, {"name": "DBZ Vegeta Tag (discontinued)", "channel": "Shopify", "revenue": 22.0, "units": 1, "conversion_rate": 0.4, "trend": "down"}, {"name": "One Piece Nami Keychain v1", "channel": "Amazon US", "revenue": 18.0, "units": 1, "conversion_rate": 0.6, "trend": "down"}, {"name": "MHA Bakugo Sticker Single", "channel": "Shopify", "revenue": 12.0, "units": 2, "conversion_rate": 0.3, "trend": "flat"}, {"name": "Jujutsu Kaisen Todo Pin", "channel": "Amazon UK", "revenue": 28.0, "units": 2, "conversion_rate": 0.7, "trend": "down"}, {"name": "Demon Slayer Zenitsu Tag v1", "channel": "Amazon US", "revenue": 32.0, "units": 2, "conversion_rate": 0.9, "trend": "down"}, {"name": "Spy x Family Bond Keychain", "channel": "Shopify", "revenue": 15.0, "units": 1, "conversion_rate": 0.2, "trend": "down"}, {"name": "Naruto Sasuke Single Keychain", "channel": "Amazon US", "revenue": 25.0, "units": 2, "conversion_rate": 0.5, "trend": "flat"}, {"name": "AOT Levi Pin (old mold)", "channel": "Amazon UK", "revenue": 20.0, "units": 1, "conversion_rate": 0.6, "trend": "down"}], "inventory_alerts": [{"product": "One Piece Zoro Bundle", "sku": "WW-OP-ZORO-B3", "source": "Amazon US FBA", "severity": "critical", "inventory": 0}, {"product": "Demon Slayer Tanjiro Tag", "sku": "WW-DS-TANJ-T1", "source": "Amazon US FBA", "severity": "warning", "inventory": 8}, {"product": "Naruto Akatsuki Pin Set", "sku": "WW-NA-AKAT-P3", "source": "Shopify (NSS)", "severity": "warning", "inventory": 12}], "meta_campaigns": [{"name": "Zoro Bundle - TOF - Broad", "spend": 420.5, "roas": 3.2, "purchases": 38}, {"name": "Luffy G5 - Interest Stack", "spend": 310.0, "roas": 2.1, "purchases": 22}, {"name": "Brand Awareness - UK LAL", "spend": 180.0, "roas": 0.8, "purchases": 5}, {"name": "Retargeting - ATC 7d", "spend": 95.0, "roas": 4.8, "purchases": 15}]}, "amazon_us": {"headline": [{"label": "Revenue", "value": 12150.0, "format": "currency_compact", "change": 8.4}, {"label": "Orders", "value": 340, "format": "number", "change": 6.2}, {"label": "AOV", "value": 35.74, "format": "currency", "change": 2.1}, {"label": "TACoS", "value": 13.2, "format": "percent", "change": -1.8, "invert": true}], "kpis": [{"key": "us_revenue", "label": "Revenue", "value": 12150.0, "format": "currency", "group": "performance", "hero": true, "change": 8.4, "sparkline": [380, 420, 395, 450, 410, 440, 385, 460, 430, 415, 470, 445, 425, 455, 480, 465, 490, 470, 500, 485, 510, 495, 520, 505, 530, 515, 540, 525, 550, 535], "target": 500000, "progress": 2.4}, {"key": "us_orders", "label": "Orders", "value": 340, "format": "number", "group": "performance", "change": 6.2, "sparkline": [10, 12, 11, 14, 12, 13, 11, 15, 13, 12, 14, 13, 12, 14, 15, 14, 15, 14, 16, 15, 16, 15, 16, 15, 17, 16, 17, 16, 17, 16]}, {"key": "us_aov", "label": "AOV", "value": 35.74, "format": "currency", "group": "performance", "change": 2.1, "sparkline": [34, 35, 36, 35, 36, 34, 35, 36, 35, 36]}, {"key": "us_units", "label": "Units Sold", "value": 685, "format": "number", "group": "performance", "change": 7.8, "sparkline": [20, 22, 21, 24, 22, 23, 21, 25, 23, 22]}, {"key": "us_sessions", "label": "Sessions", "value": 15420, "format": "number", "group": "performance", "change": 5.3, "sparkline": [450, 480, 510, 490, 520, 500, 530, 510, 540, 520]}, {"key": "us_tacos", "label": "TACoS", "value": 13.2, "format": "percent", "group": "advertising", "change": -1.8, "sparkline": [15, 14.5, 14, 13.8, 13.5, 13.2, 13.0], "invert": true}, {"key": "us_ppc_spend", "label": "PPC Spend", "value": 1604.0, "format": "currency", "group": "advertising", "change": 3.5, "sparkline": [45, 50, 52, 55, 48, 53, 56]}, {"key": "us_acos", "label": "ACoS", "value": 28.5, "format": "percent", "group": "advertising", "change": -2.1, "sparkline": [32, 31, 30, 29, 28, 29, 28], "invert": true}, {"key": "us_organic_pct", "label": "Organic Sales", "value": 62.0, "format": "percent", "group": "advertising", "change": 3.2, "sparkline": [58, 59, 60, 61, 62, 61, 62]}], "daily_series": {"2026-02-13": {"revenue": 380}, "2026-02-14": {"revenue": 420}, "2026-02-15": {"revenue": 395}, "2026-02-16": {"revenue": 450}, "2026-02-17": {"revenue": 410}, "2026-02-18": {"revenue": 440}, "2026-02-19": {"revenue": 385}, "2026-02-20": {"revenue": 460}, "2026-02-21": {"revenue": 430}, "2026-02-22": {"revenue": 415}, "2026-02-23": {"revenue": 470}, "2026-02-24": {"revenue": 445}, "2026-02-25": {"revenue": 425}, "2026-02-26": {"revenue": 455}, "2026-02-27": {"revenue": 480}, "2026-02-28": {"revenue": 465}, "2026-03-01": {"revenue": 490}, "2026-03-02": {"revenue": 470}, "2026-03-03": {"revenue": 500}, "2026-03-04": {"revenue": 485}, "2026-03-05": {"revenue": 510}, "2026-03-06": {"revenue": 495}, "2026-03-07": {"revenue": 520}, "2026-03-08": {"revenue": 505}, "2026-03-09": {"revenue": 530}, "2026-03-10": {"revenue": 515}, "2026-03-11": {"revenue": 540}, "2026-03-12": {"revenue": 525}, "2026-03-13": {"revenue": 550}, "2026-03-14": {"revenue": 535}}, "top_products": [{"name": "One Piece Zoro Keychain Bundle", "revenue": 2840.0, "units": 142, "bsr": 1250, "conversion_rate": 12.5, "trend": "up"}, {"name": "Demon Slayer Tanjiro Metal Tag", "revenue": 2210.0, "units": 118, "bsr": 1890, "conversion_rate": 10.8, "trend": "up"}, {"name": "Naruto Akatsuki Pin Set", "revenue": 1890.0, "units": 95, "bsr": 2340, "conversion_rate": 9.2, "trend": "flat"}, {"name": "Jujutsu Kaisen Sukuna Ring", "revenue": 1180.0, "units": 59, "bsr": 3450, "conversion_rate": 7.2, "trend": "up"}, {"name": "Chainsaw Man Pochita Bundle", "revenue": 620.0, "units": 31, "bsr": 5670, "conversion_rate": 5.4, "trend": "up"}], "bottom_products": [{"name": "Bleach Ichigo Keychain v1", "revenue": 45.0, "units": 3, "bsr": 48200, "conversion_rate": 1.2, "trend": "down"}, {"name": "One Piece Nami Keychain v1", "revenue": 18.0, "units": 1, "bsr": 62100, "conversion_rate": 0.6, "trend": "down"}, {"name": "Demon Slayer Zenitsu Tag v1", "revenue": 32.0, "units": 2, "bsr": 55400, "conversion_rate": 0.9, "trend": "down"}, {"name": "Naruto Sasuke Single Keychain", "revenue": 25.0, "units": 2, "bsr": 58900, "conversion_rate": 0.5, "trend": "flat"}, {"name": "Chainsaw Man Power Pin v1", "revenue": 15.0, "units": 1, "bsr": 71200, "conversion_rate": 0.4, "trend": "down"}], "inventory_alerts": [{"product": "One Piece Zoro Bundle", "sku": "WW-OP-ZORO-B3", "source": "FBA US", "severity": "critical", "inventory": 0}, {"product": "Demon Slayer Tanjiro Tag", "sku": "WW-DS-TANJ-T1", "source": "FBA US", "severity": "warning", "inventory": 8}]}, "amazon_uk": {"headline": [{"label": "Revenue", "value": 3430.5, "format": "currency_gbp_compact", "change": -2.1}, {"label": "Orders", "value": 98, "format": "number", "change": -5.4}, {"label": "AOV", "value": 35.0, "format": "currency_gbp", "change": 3.5}, {"label": "TACoS", "value": 14.8, "format": "percent", "change": 2.1, "invert": true}], "kpis": [{"key": "uk_revenue", "label": "Revenue", "value": 3430.5, "format": "currency_gbp", "group": "performance", "hero": true, "change": -2.1, "sparkline": [120, 115, 130, 125, 118, 122, 128, 135, 140, 132, 138, 142, 130, 145, 148, 135, 140, 138, 145, 150, 142, 148, 155, 150, 158, 152, 160, 155, 162, 158], "target": 120000, "progress": 2.9}, {"key": "uk_orders", "label": "Orders", "value": 98, "format": "number", "group": "performance", "change": -5.4, "sparkline": [4, 3, 4, 3, 4, 3, 3, 4, 4, 3]}, {"key": "uk_aov", "label": "AOV", "value": 35.0, "format": "currency_gbp", "group": "performance", "change": 3.5, "sparkline": [32, 33, 34, 33, 35, 34, 35]}, {"key": "uk_units", "label": "Units Sold", "value": 196, "format": "number", "group": "performance", "change": -3.2, "sparkline": [7, 6, 7, 6, 7, 6, 6]}, {"key": "uk_tacos", "label": "TACoS", "value": 14.8, "format": "percent", "group": "advertising", "change": 2.1, "sparkline": [13, 13.5, 14, 14.2, 14.5, 14.8, 15], "invert": true}, {"key": "uk_ppc_spend", "label": "PPC Spend", "value": 508.0, "format": "currency_gbp", "group": "advertising", "change": 5.2, "sparkline": [14, 15, 16, 17, 16, 17, 18]}, {"key": "uk_acos", "label": "ACoS", "value": 32.1, "format": "percent", "group": "advertising", "change": 3.5, "sparkline": [29, 30, 31, 30, 32, 31, 32], "invert": true}, {"key": "uk_organic_pct", "label": "Organic Sales", "value": 55.0, "format": "percent", "group": "advertising", "change": -2.8, "sparkline": [58, 57, 56, 56, 55, 55, 55]}], "daily_series": {"2026-02-13": {"revenue": 120}, "2026-02-14": {"revenue": 115}, "2026-02-15": {"revenue": 130}, "2026-02-16": {"revenue": 125}, "2026-02-17": {"revenue": 118}, "2026-02-18": {"revenue": 122}, "2026-02-19": {"revenue": 128}, "2026-02-20": {"revenue": 135}, "2026-02-21": {"revenue": 140}, "2026-02-22": {"revenue": 132}, "2026-02-23": {"revenue": 138}, "2026-02-24": {"revenue": 142}, "2026-02-25": {"revenue": 130}, "2026-02-26": {"revenue": 145}, "2026-02-27": {"revenue": 148}, "2026-02-28": {"revenue": 135}, "2026-03-01": {"revenue": 140}, "2026-03-02": {"revenue": 138}, "2026-03-03": {"revenue": 145}, "2026-03-04": {"revenue": 150}, "2026-03-05": {"revenue": 142}, "2026-03-06": {"revenue": 148}, "2026-03-07": {"revenue": 155}, "2026-03-08": {"revenue": 150}, "2026-03-09": {"revenue": 158}, "2026-03-10": {"revenue": 152}, "2026-03-11": {"revenue": 160}, "2026-03-12": {"revenue": 155}, "2026-03-13": {"revenue": 162}, "2026-03-14": {"revenue": 158}}, "top_products": [{"name": "Attack on Titan Wings Bundle", "revenue": 1420.0, "units": 71, "bsr": 890, "conversion_rate": 8.5, "trend": "down"}, {"name": "Dragon Ball Z Capsule Keychain", "revenue": 980.0, "units": 52, "bsr": 1240, "conversion_rate": 6.8, "trend": "flat"}, {"name": "One Piece Straw Hat Pin Set", "revenue": 580.0, "units": 29, "bsr": 2100, "conversion_rate": 5.2, "trend": "up"}, {"name": "Naruto Hinata Keychain", "revenue": 280.0, "units": 14, "bsr": 4500, "conversion_rate": 3.1, "trend": "down"}], "bottom_products": [{"name": "Naruto Hinata Pin (old design)", "revenue": 38.0, "units": 2, "bsr": 42300, "conversion_rate": 0.8, "trend": "down"}, {"name": "Jujutsu Kaisen Todo Pin", "revenue": 28.0, "units": 2, "bsr": 51200, "conversion_rate": 0.7, "trend": "down"}, {"name": "AOT Levi Pin (old mold)", "revenue": 20.0, "units": 1, "bsr": 63400, "conversion_rate": 0.6, "trend": "down"}], "inventory_alerts": []}, "shopify": {"headline": [{"label": "Revenue", "value": 2840.0, "format": "currency_compact", "change": 45.2}, {"label": "Sessions", "value": 4820, "format": "number", "change": 32.1}, {"label": "CVR", "value": 1.7, "format": "percent", "change": 0.3}, {"label": "AOV", "value": 34.63, "format": "currency", "change": 8.4}], "kpis": [{"key": "sh_revenue", "label": "Revenue", "value": 2840.0, "format": "currency", "group": "sales", "hero": true, "change": 45.2, "sparkline": [80, 120, 90, 140, 160, 130, 200], "target": 300000, "progress": 0.9}, {"key": "sh_orders", "label": "Orders", "value": 82, "format": "number", "group": "sales", "change": 38.5, "sparkline": [2, 3, 2, 4, 3, 4, 5]}, {"key": "sh_aov", "label": "AOV", "value": 34.63, "format": "currency", "group": "sales", "change": 8.4, "sparkline": [30, 32, 31, 34, 33, 35, 35]}, {"key": "sh_new_customers", "label": "New Customers", "value": 72.0, "format": "percent", "group": "sales", "change": 5.2, "sparkline": [65, 68, 70, 69, 71, 72, 72]}, {"key": "sh_sessions", "label": "Sessions", "value": 4820, "format": "number", "group": "traffic", "change": 32.1, "sparkline": [120, 140, 130, 160, 150, 170, 180]}, {"key": "sh_cvr", "label": "Conversion Rate", "value": 1.7, "format": "percent", "group": "traffic", "change": 0.3, "sparkline": [1.2, 1.4, 1.3, 1.5, 1.6, 1.5, 1.7]}, {"key": "sh_cart_abandon", "label": "Cart Abandonment", "value": 68.5, "format": "percent", "group": "traffic", "change": -3.2, "sparkline": [75, 73, 71, 70, 69, 69, 68], "invert": true}, {"key": "sh_returning", "label": "Returning Customers", "value": 28.0, "format": "percent", "group": "traffic", "change": -5.2, "sparkline": [32, 30, 29, 28, 28, 27, 28]}], "daily_series": {"2026-02-13": {"revenue": 85}, "2026-02-14": {"revenue": 92}, "2026-02-15": {"revenue": 78}, "2026-02-16": {"revenue": 105}, "2026-02-17": {"revenue": 110}, "2026-02-18": {"revenue": 95}, "2026-02-19": {"revenue": 88}, "2026-02-20": {"revenue": 102}, "2026-02-21": {"revenue": 115}, "2026-02-22": {"revenue": 98}, "2026-02-23": {"revenue": 120}, "2026-02-24": {"revenue": 108}, "2026-02-25": {"revenue": 95}, "2026-02-26": {"revenue": 112}, "2026-02-27": {"revenue": 125}, "2026-02-28": {"revenue": 130}, "2026-03-01": {"revenue": 118}, "2026-03-02": {"revenue": 105}, "2026-03-03": {"revenue": 135}, "2026-03-04": {"revenue": 140}, "2026-03-05": {"revenue": 128}, "2026-03-06": {"revenue": 145}, "2026-03-07": {"revenue": 138}, "2026-03-08": {"revenue": 150}, "2026-03-09": {"revenue": 142}, "2026-03-10": {"revenue": 155}, "2026-03-11": {"revenue": 148}, "2026-03-12": {"revenue": 160}, "2026-03-13": {"revenue": 165}, "2026-03-14": {"revenue": 170}}, "top_products": [{"name": "One Piece Luffy Gear 5 Keychain", "revenue": 1650.0, "units": 82, "conversion_rate": 3.8, "trend": "up"}, {"name": "My Hero Academia Deku Tag", "revenue": 750.0, "units": 38, "conversion_rate": 2.9, "trend": "down"}, {"name": "Spy x Family Anya Sticker Pack", "revenue": 480.0, "units": 48, "conversion_rate": 2.1, "trend": "flat"}], "top_landing_pages": [{"page": "/collections/one-piece", "sessions": 1240, "conversion_rate": 2.8, "revenue": 1180.0}, {"page": "/products/luffy-g5-keychain", "sessions": 890, "conversion_rate": 3.4, "revenue": 920.0}, {"page": "/collections/all", "sessions": 680, "conversion_rate": 1.2, "revenue": 280.0}, {"page": "/products/deku-metal-tag", "sessions": 420, "conversion_rate": 2.1, "revenue": 310.0}, {"page": "/", "sessions": 1590, "conversion_rate": 0.8, "revenue": 150.0}], "bottom_products": [{"name": "DBZ Vegeta Tag (discontinued)", "revenue": 22.0, "units": 1, "conversion_rate": 0.4, "trend": "down"}, {"name": "Spy x Family Bond Keychain", "revenue": 15.0, "units": 1, "conversion_rate": 0.2, "trend": "down"}, {"name": "MHA Bakugo Sticker Single", "revenue": 12.0, "units": 2, "conversion_rate": 0.3, "trend": "flat"}], "meta_campaigns": [{"name": "Zoro Bundle - TOF - Broad", "spend": 420.5, "roas": 3.2, "purchases": 38}, {"name": "Luffy G5 - Interest Stack", "spend": 310.0, "roas": 2.1, "purchases": 22}, {"name": "Brand Awareness - UK LAL", "spend": 180.0, "roas": 0.8, "purchases": 5}, {"name": "Retargeting - ATC 7d", "spend": 95.0, "roas": 4.8, "purchases": 15}], "inventory_alerts": [{"product": "Naruto Akatsuki Pin Set", "sku": "WW-NA-AKAT-P3", "source": "NSS Warehouse", "severity": "warning", "inventory": 12}]}}};</script>
+<script>window.__HERMES_DATA__ = {"period_days": 30, "generated_at": "2026-03-14T16:04:30.689695+00:00", "sources": {"shopify": true, "amazon": true, "meta": true, "xero": true, "klaviyo": true}, "views": {"overview": {"headline": [{"label": "Net Revenue", "value": 18420.5, "format": "currency_compact", "change": 12.3}, {"label": "Total Orders", "value": 487, "format": "number", "change": 8.1}, {"label": "Blended ROAS", "value": 2.4, "format": "multiplier", "change": -3.2}, {"label": "Inventory Health", "value": "Warning", "format": "status", "detail": "3 SKUs low", "status": "warning"}], "kpis": [{"key": "net_revenue", "label": "Net Revenue", "value": 18420.5, "format": "currency", "group": "revenue", "hero": true, "change": 12.3, "sparkline": [800, 950, 1100, 900, 1200, 1050, 1300], "target": 500000, "progress": 3.7}, {"key": "shopify_revenue", "label": "Shopify Revenue", "value": 2840.0, "format": "currency", "group": "revenue", "change": 45.2, "sparkline": [80, 120, 90, 140, 160, 130, 200], "target": 300000, "progress": 0.9}, {"key": "amazon_us_revenue", "label": "Amazon US Revenue", "value": 12150.0, "format": "currency", "group": "revenue", "change": 8.4, "sparkline": [500, 520, 480, 550, 530, 560, 580], "target": 500000, "progress": 2.4}, {"key": "amazon_uk_revenue", "label": "Amazon UK Revenue", "value": 3430.5, "format": "currency_gbp", "group": "revenue", "change": -2.1, "sparkline": [180, 170, 165, 175, 160, 155, 150], "target": 120000, "progress": 2.9}, {"key": "email_revenue", "label": "Email Revenue", "value": 420.0, "format": "currency", "group": "revenue", "change": 0, "sparkline": [15, 20, 18, 22, 19, 21, 20]}, {"key": "meta_roas", "label": "Meta ROAS", "value": 2.4, "format": "multiplier", "group": "efficiency", "change": -3.2, "sparkline": [2.1, 2.3, 2.5, 2.2, 2.6, 2.3, 2.4]}, {"key": "meta_cpa", "label": "Meta CPA", "value": 14.2, "format": "currency", "group": "efficiency", "change": 5.1, "sparkline": [12, 13, 15, 14, 13, 15, 14], "invert": true}, {"key": "meta_spend", "label": "Meta Spend", "value": 1850.0, "format": "currency", "group": "efficiency", "change": 12.0, "sparkline": [50, 55, 60, 65, 70, 62, 68]}, {"key": "cac", "label": "CAC", "value": 22.5, "format": "currency", "group": "efficiency", "change": -8.3, "sparkline": [28, 26, 24, 25, 23, 22, 22], "invert": true}, {"key": "blended_aov", "label": "Blended AOV", "value": 37.8, "format": "currency", "group": "efficiency", "change": 3.5, "sparkline": [35, 36, 37, 36, 38, 37, 38]}, {"key": "gross_margin", "label": "Gross Margin", "value": 52.3, "format": "percent", "group": "health", "change": 1.2, "sparkline": [50, 51, 52, 51, 53, 52, 52]}, {"key": "total_orders", "label": "Total Orders", "value": 487, "format": "number", "group": "health", "change": 8.1, "sparkline": [20, 22, 18, 25, 21, 24, 23]}, {"key": "returning_pct", "label": "Returning Customers", "value": 18.5, "format": "percent", "group": "health", "change": -2.3, "sparkline": [20, 19, 18, 19, 18, 19, 18]}, {"key": "active_subscribers", "label": "Email Subscribers", "value": 2840, "format": "number", "group": "health", "change": 4.2, "sparkline": [2600, 2650, 2700, 2720, 2760, 2800, 2840]}, {"key": "inventory_alerts", "label": "Inventory Alerts", "value": 3, "format": "number", "group": "health", "change": null, "detail": "2 low stock, 1 OOS", "invert": true}], "daily_series": {"2026-02-13": {"shopify": 85, "amazon_us": 380, "amazon_uk": 120}, "2026-02-14": {"shopify": 92, "amazon_us": 420, "amazon_uk": 115}, "2026-02-15": {"shopify": 78, "amazon_us": 395, "amazon_uk": 130}, "2026-02-16": {"shopify": 105, "amazon_us": 450, "amazon_uk": 125}, "2026-02-17": {"shopify": 110, "amazon_us": 410, "amazon_uk": 118}, "2026-02-18": {"shopify": 95, "amazon_us": 440, "amazon_uk": 122}, "2026-02-19": {"shopify": 88, "amazon_us": 385, "amazon_uk": 128}, "2026-02-20": {"shopify": 102, "amazon_us": 460, "amazon_uk": 135}, "2026-02-21": {"shopify": 115, "amazon_us": 430, "amazon_uk": 140}, "2026-02-22": {"shopify": 98, "amazon_us": 415, "amazon_uk": 132}, "2026-02-23": {"shopify": 120, "amazon_us": 470, "amazon_uk": 138}, "2026-02-24": {"shopify": 108, "amazon_us": 445, "amazon_uk": 142}, "2026-02-25": {"shopify": 95, "amazon_us": 425, "amazon_uk": 130}, "2026-02-26": {"shopify": 112, "amazon_us": 455, "amazon_uk": 145}, "2026-02-27": {"shopify": 125, "amazon_us": 480, "amazon_uk": 148}, "2026-02-28": {"shopify": 130, "amazon_us": 465, "amazon_uk": 135}, "2026-03-01": {"shopify": 118, "amazon_us": 490, "amazon_uk": 140}, "2026-03-02": {"shopify": 105, "amazon_us": 470, "amazon_uk": 138}, "2026-03-03": {"shopify": 135, "amazon_us": 500, "amazon_uk": 145}, "2026-03-04": {"shopify": 140, "amazon_us": 485, "amazon_uk": 150}, "2026-03-05": {"shopify": 128, "amazon_us": 510, "amazon_uk": 142}, "2026-03-06": {"shopify": 145, "amazon_us": 495, "amazon_uk": 148}, "2026-03-07": {"shopify": 138, "amazon_us": 520, "amazon_uk": 155}, "2026-03-08": {"shopify": 150, "amazon_us": 505, "amazon_uk": 150}, "2026-03-09": {"shopify": 142, "amazon_us": 530, "amazon_uk": 158}, "2026-03-10": {"shopify": 155, "amazon_us": 515, "amazon_uk": 152}, "2026-03-11": {"shopify": 148, "amazon_us": 540, "amazon_uk": 160}, "2026-03-12": {"shopify": 160, "amazon_us": 525, "amazon_uk": 155}, "2026-03-13": {"shopify": 165, "amazon_us": 550, "amazon_uk": 162}, "2026-03-14": {"shopify": 170, "amazon_us": 535, "amazon_uk": 158}}, "channel_breakdown": {"Shopify": 2840, "Amazon US": 12150, "Amazon UK": 3430}, "channel_pct": {"Shopify": 15.4, "Amazon US": 65.9, "Amazon UK": 18.6}, "top_products": [{"name": "One Piece Zoro Keychain Bundle", "channel": "Amazon US", "revenue": 2840.0, "units": 142, "conversion_rate": 12.5, "trend": "up"}, {"name": "Demon Slayer Tanjiro Metal Tag", "channel": "Amazon US", "revenue": 2210.0, "units": 118, "conversion_rate": 10.8, "trend": "up"}, {"name": "Naruto Akatsuki Pin Set", "channel": "Amazon US", "revenue": 1890.0, "units": 95, "conversion_rate": 9.2, "trend": "flat"}, {"name": "One Piece Luffy Gear 5 Keychain", "channel": "Shopify", "revenue": 1650.0, "units": 82, "conversion_rate": 3.8, "trend": "up"}, {"name": "Attack on Titan Wings Bundle", "channel": "Amazon UK", "revenue": 1420.0, "units": 71, "conversion_rate": 8.5, "trend": "down"}, {"name": "Jujutsu Kaisen Sukuna Ring", "channel": "Amazon US", "revenue": 1180.0, "units": 59, "conversion_rate": 7.2, "trend": "up"}, {"name": "Dragon Ball Z Capsule Keychain", "channel": "Amazon UK", "revenue": 980.0, "units": 52, "conversion_rate": 6.8, "trend": "flat"}, {"name": "My Hero Academia Deku Tag", "channel": "Shopify", "revenue": 750.0, "units": 38, "conversion_rate": 2.9, "trend": "down"}, {"name": "Chainsaw Man Pochita Bundle", "channel": "Amazon US", "revenue": 620.0, "units": 31, "conversion_rate": 5.4, "trend": "up"}, {"name": "Spy x Family Anya Sticker Pack", "channel": "Shopify", "revenue": 480.0, "units": 48, "conversion_rate": 2.1, "trend": "flat"}], "bottom_products": [{"name": "Bleach Ichigo Keychain v1", "channel": "Amazon US", "revenue": 45.0, "units": 3, "conversion_rate": 1.2, "trend": "down"}, {"name": "Naruto Hinata Pin (old design)", "channel": "Amazon UK", "revenue": 38.0, "units": 2, "conversion_rate": 0.8, "trend": "down"}, {"name": "DBZ Vegeta Tag (discontinued)", "channel": "Shopify", "revenue": 22.0, "units": 1, "conversion_rate": 0.4, "trend": "down"}, {"name": "One Piece Nami Keychain v1", "channel": "Amazon US", "revenue": 18.0, "units": 1, "conversion_rate": 0.6, "trend": "down"}, {"name": "MHA Bakugo Sticker Single", "channel": "Shopify", "revenue": 12.0, "units": 2, "conversion_rate": 0.3, "trend": "flat"}, {"name": "Jujutsu Kaisen Todo Pin", "channel": "Amazon UK", "revenue": 28.0, "units": 2, "conversion_rate": 0.7, "trend": "down"}, {"name": "Demon Slayer Zenitsu Tag v1", "channel": "Amazon US", "revenue": 32.0, "units": 2, "conversion_rate": 0.9, "trend": "down"}, {"name": "Spy x Family Bond Keychain", "channel": "Shopify", "revenue": 15.0, "units": 1, "conversion_rate": 0.2, "trend": "down"}, {"name": "Naruto Sasuke Single Keychain", "channel": "Amazon US", "revenue": 25.0, "units": 2, "conversion_rate": 0.5, "trend": "flat"}, {"name": "AOT Levi Pin (old mold)", "channel": "Amazon UK", "revenue": 20.0, "units": 1, "conversion_rate": 0.6, "trend": "down"}], "inventory_alerts": [{"product": "One Piece Zoro Bundle", "sku": "WW-OP-ZORO-B3", "source": "Amazon US FBA", "severity": "critical", "inventory": 0}, {"product": "Demon Slayer Tanjiro Tag", "sku": "WW-DS-TANJ-T1", "source": "Amazon US FBA", "severity": "warning", "inventory": 8}, {"product": "Naruto Akatsuki Pin Set", "sku": "WW-NA-AKAT-P3", "source": "Shopify (NSS)", "severity": "warning", "inventory": 12}], "meta_campaigns": [{"name": "Zoro Bundle - TOF - Broad", "spend": 420.5, "roas": 3.2, "purchases": 38}, {"name": "Luffy G5 - Interest Stack", "spend": 310.0, "roas": 2.1, "purchases": 22}, {"name": "Brand Awareness - UK LAL", "spend": 180.0, "roas": 0.8, "purchases": 5}, {"name": "Retargeting - ATC 7d", "spend": 95.0, "roas": 4.8, "purchases": 15}]}, "amazon_us": {"headline": [{"label": "Revenue", "value": 12150.0, "format": "currency_compact", "change": 8.4}, {"label": "Orders", "value": 340, "format": "number", "change": 6.2}, {"label": "AOV", "value": 35.74, "format": "currency", "change": 2.1}, {"label": "TACoS", "value": 13.2, "format": "percent", "change": -1.8, "invert": true}], "kpis": [{"key": "us_revenue", "label": "Revenue", "value": 12150.0, "format": "currency", "group": "performance", "hero": true, "change": 8.4, "sparkline": [380, 420, 395, 450, 410, 440, 385, 460, 430, 415, 470, 445, 425, 455, 480, 465, 490, 470, 500, 485, 510, 495, 520, 505, 530, 515, 540, 525, 550, 535], "target": 500000, "progress": 2.4}, {"key": "us_orders", "label": "Orders", "value": 340, "format": "number", "group": "performance", "change": 6.2, "sparkline": [10, 12, 11, 14, 12, 13, 11, 15, 13, 12, 14, 13, 12, 14, 15, 14, 15, 14, 16, 15, 16, 15, 16, 15, 17, 16, 17, 16, 17, 16]}, {"key": "us_aov", "label": "AOV", "value": 35.74, "format": "currency", "group": "performance", "change": 2.1, "sparkline": [34, 35, 36, 35, 36, 34, 35, 36, 35, 36]}, {"key": "us_units", "label": "Units Sold", "value": 685, "format": "number", "group": "performance", "change": 7.8, "sparkline": [20, 22, 21, 24, 22, 23, 21, 25, 23, 22]}, {"key": "us_sessions", "label": "Sessions", "value": 15420, "format": "number", "group": "performance", "change": 5.3, "sparkline": [450, 480, 510, 490, 520, 500, 530, 510, 540, 520]}, {"key": "us_tacos", "label": "TACoS", "value": 13.2, "format": "percent", "group": "advertising", "change": -1.8, "sparkline": [15, 14.5, 14, 13.8, 13.5, 13.2, 13.0], "invert": true}, {"key": "us_ppc_spend", "label": "PPC Spend", "value": 1604.0, "format": "currency", "group": "advertising", "change": 3.5, "sparkline": [45, 50, 52, 55, 48, 53, 56]}, {"key": "us_acos", "label": "ACoS", "value": 28.5, "format": "percent", "group": "advertising", "change": -2.1, "sparkline": [32, 31, 30, 29, 28, 29, 28], "invert": true}, {"key": "us_organic_pct", "label": "Organic Sales", "value": 62.0, "format": "percent", "group": "advertising", "change": 3.2, "sparkline": [58, 59, 60, 61, 62, 61, 62]}], "daily_series": {"2026-02-13": {"revenue": 380}, "2026-02-14": {"revenue": 420}, "2026-02-15": {"revenue": 395}, "2026-02-16": {"revenue": 450}, "2026-02-17": {"revenue": 410}, "2026-02-18": {"revenue": 440}, "2026-02-19": {"revenue": 385}, "2026-02-20": {"revenue": 460}, "2026-02-21": {"revenue": 430}, "2026-02-22": {"revenue": 415}, "2026-02-23": {"revenue": 470}, "2026-02-24": {"revenue": 445}, "2026-02-25": {"revenue": 425}, "2026-02-26": {"revenue": 455}, "2026-02-27": {"revenue": 480}, "2026-02-28": {"revenue": 465}, "2026-03-01": {"revenue": 490}, "2026-03-02": {"revenue": 470}, "2026-03-03": {"revenue": 500}, "2026-03-04": {"revenue": 485}, "2026-03-05": {"revenue": 510}, "2026-03-06": {"revenue": 495}, "2026-03-07": {"revenue": 520}, "2026-03-08": {"revenue": 505}, "2026-03-09": {"revenue": 530}, "2026-03-10": {"revenue": 515}, "2026-03-11": {"revenue": 540}, "2026-03-12": {"revenue": 525}, "2026-03-13": {"revenue": 550}, "2026-03-14": {"revenue": 535}}, "top_products": [{"name": "One Piece Zoro Keychain Bundle", "revenue": 2840.0, "units": 142, "bsr": 1250, "conversion_rate": 12.5, "trend": "up"}, {"name": "Demon Slayer Tanjiro Metal Tag", "revenue": 2210.0, "units": 118, "bsr": 1890, "conversion_rate": 10.8, "trend": "up"}, {"name": "Naruto Akatsuki Pin Set", "revenue": 1890.0, "units": 95, "bsr": 2340, "conversion_rate": 9.2, "trend": "flat"}, {"name": "Jujutsu Kaisen Sukuna Ring", "revenue": 1180.0, "units": 59, "bsr": 3450, "conversion_rate": 7.2, "trend": "up"}, {"name": "Chainsaw Man Pochita Bundle", "revenue": 620.0, "units": 31, "bsr": 5670, "conversion_rate": 5.4, "trend": "up"}], "bottom_products": [{"name": "Bleach Ichigo Keychain v1", "revenue": 45.0, "units": 3, "bsr": 48200, "conversion_rate": 1.2, "trend": "down"}, {"name": "One Piece Nami Keychain v1", "revenue": 18.0, "units": 1, "bsr": 62100, "conversion_rate": 0.6, "trend": "down"}, {"name": "Demon Slayer Zenitsu Tag v1", "revenue": 32.0, "units": 2, "bsr": 55400, "conversion_rate": 0.9, "trend": "down"}, {"name": "Naruto Sasuke Single Keychain", "revenue": 25.0, "units": 2, "bsr": 58900, "conversion_rate": 0.5, "trend": "flat"}, {"name": "Chainsaw Man Power Pin v1", "revenue": 15.0, "units": 1, "bsr": 71200, "conversion_rate": 0.4, "trend": "down"}], "inventory_alerts": [{"product": "One Piece Zoro Bundle", "sku": "WW-OP-ZORO-B3", "source": "FBA US", "severity": "critical", "inventory": 0}, {"product": "Demon Slayer Tanjiro Tag", "sku": "WW-DS-TANJ-T1", "source": "FBA US", "severity": "warning", "inventory": 8}]}, "amazon_uk": {"headline": [{"label": "Revenue", "value": 3430.5, "format": "currency_gbp_compact", "change": -2.1}, {"label": "Orders", "value": 98, "format": "number", "change": -5.4}, {"label": "AOV", "value": 35.0, "format": "currency_gbp", "change": 3.5}, {"label": "TACoS", "value": 14.8, "format": "percent", "change": 2.1, "invert": true}], "kpis": [{"key": "uk_revenue", "label": "Revenue", "value": 3430.5, "format": "currency_gbp", "group": "performance", "hero": true, "change": -2.1, "sparkline": [120, 115, 130, 125, 118, 122, 128, 135, 140, 132, 138, 142, 130, 145, 148, 135, 140, 138, 145, 150, 142, 148, 155, 150, 158, 152, 160, 155, 162, 158], "target": 120000, "progress": 2.9}, {"key": "uk_orders", "label": "Orders", "value": 98, "format": "number", "group": "performance", "change": -5.4, "sparkline": [4, 3, 4, 3, 4, 3, 3, 4, 4, 3]}, {"key": "uk_aov", "label": "AOV", "value": 35.0, "format": "currency_gbp", "group": "performance", "change": 3.5, "sparkline": [32, 33, 34, 33, 35, 34, 35]}, {"key": "uk_units", "label": "Units Sold", "value": 196, "format": "number", "group": "performance", "change": -3.2, "sparkline": [7, 6, 7, 6, 7, 6, 6]}, {"key": "uk_tacos", "label": "TACoS", "value": 14.8, "format": "percent", "group": "advertising", "change": 2.1, "sparkline": [13, 13.5, 14, 14.2, 14.5, 14.8, 15], "invert": true}, {"key": "uk_ppc_spend", "label": "PPC Spend", "value": 508.0, "format": "currency_gbp", "group": "advertising", "change": 5.2, "sparkline": [14, 15, 16, 17, 16, 17, 18]}, {"key": "uk_acos", "label": "ACoS", "value": 32.1, "format": "percent", "group": "advertising", "change": 3.5, "sparkline": [29, 30, 31, 30, 32, 31, 32], "invert": true}, {"key": "uk_organic_pct", "label": "Organic Sales", "value": 55.0, "format": "percent", "group": "advertising", "change": -2.8, "sparkline": [58, 57, 56, 56, 55, 55, 55]}], "daily_series": {"2026-02-13": {"revenue": 120}, "2026-02-14": {"revenue": 115}, "2026-02-15": {"revenue": 130}, "2026-02-16": {"revenue": 125}, "2026-02-17": {"revenue": 118}, "2026-02-18": {"revenue": 122}, "2026-02-19": {"revenue": 128}, "2026-02-20": {"revenue": 135}, "2026-02-21": {"revenue": 140}, "2026-02-22": {"revenue": 132}, "2026-02-23": {"revenue": 138}, "2026-02-24": {"revenue": 142}, "2026-02-25": {"revenue": 130}, "2026-02-26": {"revenue": 145}, "2026-02-27": {"revenue": 148}, "2026-02-28": {"revenue": 135}, "2026-03-01": {"revenue": 140}, "2026-03-02": {"revenue": 138}, "2026-03-03": {"revenue": 145}, "2026-03-04": {"revenue": 150}, "2026-03-05": {"revenue": 142}, "2026-03-06": {"revenue": 148}, "2026-03-07": {"revenue": 155}, "2026-03-08": {"revenue": 150}, "2026-03-09": {"revenue": 158}, "2026-03-10": {"revenue": 152}, "2026-03-11": {"revenue": 160}, "2026-03-12": {"revenue": 155}, "2026-03-13": {"revenue": 162}, "2026-03-14": {"revenue": 158}}, "top_products": [{"name": "Attack on Titan Wings Bundle", "revenue": 1420.0, "units": 71, "bsr": 890, "conversion_rate": 8.5, "trend": "down"}, {"name": "Dragon Ball Z Capsule Keychain", "revenue": 980.0, "units": 52, "bsr": 1240, "conversion_rate": 6.8, "trend": "flat"}, {"name": "One Piece Straw Hat Pin Set", "revenue": 580.0, "units": 29, "bsr": 2100, "conversion_rate": 5.2, "trend": "up"}, {"name": "Naruto Hinata Keychain", "revenue": 280.0, "units": 14, "bsr": 4500, "conversion_rate": 3.1, "trend": "down"}], "bottom_products": [{"name": "Naruto Hinata Pin (old design)", "revenue": 38.0, "units": 2, "bsr": 42300, "conversion_rate": 0.8, "trend": "down"}, {"name": "Jujutsu Kaisen Todo Pin", "revenue": 28.0, "units": 2, "bsr": 51200, "conversion_rate": 0.7, "trend": "down"}, {"name": "AOT Levi Pin (old mold)", "revenue": 20.0, "units": 1, "bsr": 63400, "conversion_rate": 0.6, "trend": "down"}], "inventory_alerts": []}, "shopify": {"headline": [{"label": "Revenue", "value": 2840.0, "format": "currency_compact", "change": 45.2}, {"label": "Sessions", "value": 4820, "format": "number", "change": 32.1}, {"label": "CVR", "value": 1.7, "format": "percent", "change": 0.3}, {"label": "AOV", "value": 34.63, "format": "currency", "change": 8.4}], "kpis": [{"key": "sh_revenue", "label": "Revenue", "value": 2840.0, "format": "currency", "group": "sales", "hero": true, "change": 45.2, "sparkline": [80, 120, 90, 140, 160, 130, 200], "target": 300000, "progress": 0.9}, {"key": "sh_orders", "label": "Orders", "value": 82, "format": "number", "group": "sales", "change": 38.5, "sparkline": [2, 3, 2, 4, 3, 4, 5]}, {"key": "sh_aov", "label": "AOV", "value": 34.63, "format": "currency", "group": "sales", "change": 8.4, "sparkline": [30, 32, 31, 34, 33, 35, 35]}, {"key": "sh_new_customers", "label": "New Customers", "value": 72.0, "format": "percent", "group": "sales", "change": 5.2, "sparkline": [65, 68, 70, 69, 71, 72, 72]}, {"key": "sh_sessions", "label": "Sessions", "value": 4820, "format": "number", "group": "traffic", "change": 32.1, "sparkline": [120, 140, 130, 160, 150, 170, 180]}, {"key": "sh_cvr", "label": "Conversion Rate", "value": 1.7, "format": "percent", "group": "traffic", "change": 0.3, "sparkline": [1.2, 1.4, 1.3, 1.5, 1.6, 1.5, 1.7]}, {"key": "sh_cart_abandon", "label": "Cart Abandonment", "value": 68.5, "format": "percent", "group": "traffic", "change": -3.2, "sparkline": [75, 73, 71, 70, 69, 69, 68], "invert": true}, {"key": "sh_returning", "label": "Returning Customers", "value": 28.0, "format": "percent", "group": "traffic", "change": -5.2, "sparkline": [32, 30, 29, 28, 28, 27, 28]}], "daily_series": {"2026-02-13": {"revenue": 85}, "2026-02-14": {"revenue": 92}, "2026-02-15": {"revenue": 78}, "2026-02-16": {"revenue": 105}, "2026-02-17": {"revenue": 110}, "2026-02-18": {"revenue": 95}, "2026-02-19": {"revenue": 88}, "2026-02-20": {"revenue": 102}, "2026-02-21": {"revenue": 115}, "2026-02-22": {"revenue": 98}, "2026-02-23": {"revenue": 120}, "2026-02-24": {"revenue": 108}, "2026-02-25": {"revenue": 95}, "2026-02-26": {"revenue": 112}, "2026-02-27": {"revenue": 125}, "2026-02-28": {"revenue": 130}, "2026-03-01": {"revenue": 118}, "2026-03-02": {"revenue": 105}, "2026-03-03": {"revenue": 135}, "2026-03-04": {"revenue": 140}, "2026-03-05": {"revenue": 128}, "2026-03-06": {"revenue": 145}, "2026-03-07": {"revenue": 138}, "2026-03-08": {"revenue": 150}, "2026-03-09": {"revenue": 142}, "2026-03-10": {"revenue": 155}, "2026-03-11": {"revenue": 148}, "2026-03-12": {"revenue": 160}, "2026-03-13": {"revenue": 165}, "2026-03-14": {"revenue": 170}}, "top_products": [{"name": "One Piece Luffy Gear 5 Keychain", "revenue": 1650.0, "units": 82, "conversion_rate": 3.8, "trend": "up"}, {"name": "My Hero Academia Deku Tag", "revenue": 750.0, "units": 38, "conversion_rate": 2.9, "trend": "down"}, {"name": "Spy x Family Anya Sticker Pack", "revenue": 480.0, "units": 48, "conversion_rate": 2.1, "trend": "flat"}], "top_landing_pages": [{"page": "/collections/one-piece", "sessions": 1240, "conversion_rate": 2.8, "revenue": 1180.0}, {"page": "/products/luffy-g5-keychain", "sessions": 890, "conversion_rate": 3.4, "revenue": 920.0}, {"page": "/collections/all", "sessions": 680, "conversion_rate": 1.2, "revenue": 280.0}, {"page": "/products/deku-metal-tag", "sessions": 420, "conversion_rate": 2.1, "revenue": 310.0}, {"page": "/", "sessions": 1590, "conversion_rate": 0.8, "revenue": 150.0}], "bottom_products": [{"name": "DBZ Vegeta Tag (discontinued)", "revenue": 22.0, "units": 1, "conversion_rate": 0.4, "trend": "down"}, {"name": "Spy x Family Bond Keychain", "revenue": 15.0, "units": 1, "conversion_rate": 0.2, "trend": "down"}, {"name": "MHA Bakugo Sticker Single", "revenue": 12.0, "units": 2, "conversion_rate": 0.3, "trend": "flat"}], "meta_campaigns": [{"name": "Zoro Bundle - TOF - Broad", "spend": 420.5, "roas": 3.2, "purchases": 38}, {"name": "Luffy G5 - Interest Stack", "spend": 310.0, "roas": 2.1, "purchases": 22}, {"name": "Brand Awareness - UK LAL", "spend": 180.0, "roas": 0.8, "purchases": 5}, {"name": "Retargeting - ATC 7d", "spend": 95.0, "roas": 4.8, "purchases": 15}], "inventory_alerts": [{"product": "Naruto Akatsuki Pin Set", "sku": "WW-NA-AKAT-P3", "source": "NSS Warehouse", "severity": "warning", "inventory": 12}]}}};</script>
 </head>
-<body class="font-sans text-slate-900 min-h-screen antialiased">
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200/60" style="box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between py-3">
+<body class="font-sans text-white min-h-screen antialiased">
+    <header class="sticky top-0 z-50" style="background: rgba(15,17,23,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.06);">
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-8">
+            <div class="flex items-center justify-between py-3.5">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center shadow-sm">
-                        <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, #8B5CF6 0%, #06B6D4 100%);">
+                        <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/></svg>
                     </div>
                     <div class="flex items-baseline gap-1.5">
-                        <span class="text-[15px] font-semibold text-slate-900">Hermes</span>
-                        <span class="text-[15px] text-slate-400 font-light">/ Weeb Workshop</span>
+                        <span class="text-[15px] font-semibold text-white">Hermes</span>
+                        <span class="text-[15px] text-[#64748B] font-light">/</span>
+                        <span class="text-[15px] text-[#64748B] font-light">Weeb Workshop</span>
                     </div>
                 </div>
                 <div class="flex items-center gap-5">
-                    <span id="date-range" class="text-xs text-slate-400 font-mono hidden sm:inline"></span>
-                    <div id="period-selector" class="flex bg-slate-100 rounded-lg p-0.5"></div>
-                    <button id="export-btn" class="no-print flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors">
+                    <span id="date-range" class="text-xs text-[#64748B] font-mono hidden sm:inline"></span>
+                    <div id="period-selector" class="flex rounded-lg p-0.5" style="background: #1A1D27;"></div>
+                    <button id="export-btn" class="no-print flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#94A3B8] rounded-lg hover:text-white cursor-pointer transition-colors" style="background: #1A1D27;">
                         <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                         Export
                     </button>
                     <div class="flex items-center gap-1.5">
                         <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                        <span class="text-xs text-slate-400 font-medium">Live</span>
+                        <span class="text-xs text-[#64748B] font-medium">Live</span>
                     </div>
                 </div>
             </div>
             <div class="flex items-center gap-0 -mb-px no-print">
-                <button class="channel-tab tab-active px-4 py-2.5 text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent transition-colors hover:text-slate-700" data-tab="overview">All Channels</button>
-                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent transition-colors hover:text-slate-700" data-tab="amazon_us">Amazon US</button>
-                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent transition-colors hover:text-slate-700" data-tab="amazon_uk">Amazon UK</button>
-                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-slate-500 cursor-pointer border-b-2 border-transparent transition-colors hover:text-slate-700" data-tab="shopify">Shopify</button>
+                <button class="channel-tab tab-active px-4 py-2.5 text-sm font-medium text-[#64748B] cursor-pointer border-b-2 border-transparent transition-colors hover:text-[#94A3B8]" data-tab="overview">All Channels</button>
+                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-[#64748B] cursor-pointer border-b-2 border-transparent transition-colors hover:text-[#94A3B8]" data-tab="amazon_us">Amazon US</button>
+                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-[#64748B] cursor-pointer border-b-2 border-transparent transition-colors hover:text-[#94A3B8]" data-tab="amazon_uk">Amazon UK</button>
+                <button class="channel-tab px-4 py-2.5 text-sm font-medium text-[#64748B] cursor-pointer border-b-2 border-transparent transition-colors hover:text-[#94A3B8]" data-tab="shopify">Shopify</button>
             </div>
         </div>
     </header>
 
-    <main id="dashboard-content" class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <p class="text-slate-400 text-center py-20 text-sm">Loading dashboard...</p>
+    <main id="dashboard-content" class="max-w-[1400px] mx-auto px-6 lg:px-8 py-6 space-y-5">
+        <p class="text-[#64748B] text-center py-20 text-sm">Loading dashboard...</p>
     </main>
 
 <script>
 (function() {
     var D = window.__HERMES_DATA__;
-    if (!D) { document.getElementById('dashboard-content').innerHTML = '<p class="text-red-500 text-center py-20 text-sm">No data. Run: python generate_dashboard.py --demo</p>'; return; }
+    if (!D) { document.getElementById('dashboard-content').innerHTML = '<p class="text-red-400 text-center py-20 text-sm">No data. Run: python generate_dashboard.py --demo</p>'; return; }
 
     var activeTab = 'overview';
     var charts = [];
 
-    /* ═══ CARD CONFIG: defines the visual personality of each KPI ═══ */
-    var CFG = {
-        // Overview revenue
-        'net_revenue':       { bg: 'card-dark', viz: 'ring' },
-        'shopify_revenue':   { bg: 'card-purple', viz: 'ring' },
-        'amazon_us_revenue': { bg: 'card-blue', viz: 'spark' },
-        'amazon_uk_revenue': { bg: 'card-pink', viz: 'spark' },
-        'email_revenue':     { bg: '', viz: 'spark' },
-        // Channel revenue
-        'us_revenue': { bg: 'card-blue', viz: 'ring' },
-        'uk_revenue': { bg: 'card-pink', viz: 'ring' },
-        'sh_revenue': { bg: 'card-purple', viz: 'ring' },
-        // Efficiency - gauges dominate
-        'meta_roas':    { bg: 'card-amber', viz: 'gauge' },
-        'gross_margin': { bg: 'card-green', viz: 'gauge' },
-        'us_tacos':     { bg: '', viz: 'gauge' },
-        'uk_tacos':     { bg: '', viz: 'gauge' },
-        'us_acos':      { bg: '', viz: 'gauge' },
-        'uk_acos':      { bg: '', viz: 'gauge' },
-        'sh_cvr':       { bg: 'card-green', viz: 'gauge' },
-        'sh_cart_abandon': { bg: 'card-rose', viz: 'gauge' },
-        'returning_pct':   { bg: 'card-cyan', viz: 'gauge' },
-        'sh_returning':    { bg: '', viz: 'gauge' },
-        // Bars
-        'meta_cpa':      { bg: '', viz: 'bar' },
-        'cac':           { bg: '', viz: 'bar' },
-        'us_organic_pct':  { bg: '', viz: 'bar' },
-        'uk_organic_pct':  { bg: '', viz: 'bar' },
-        'sh_new_customers': { bg: '', viz: 'bar' },
-        // Status
-        'inventory_alerts':   { bg: '', viz: 'dots' },
+    // ── Color System ──
+    var PURPLE = '#8B5CF6';
+    var CYAN = '#06B6D4';
+    var GREEN = '#22C55E';
+    var RED = '#EF4444';
+    var AMBER = '#F59E0B';
+    var PINK = '#EC4899';
+    var BLUE = '#3B82F6';
+
+    // KPI accent colors - subtle, used only for sparklines and indicators
+    var KPI_COLORS = {
+        'net_revenue': PURPLE, 'shopify_revenue': PURPLE, 'amazon_us_revenue': BLUE,
+        'amazon_uk_revenue': PINK, 'email_revenue': CYAN,
+        'us_revenue': BLUE, 'uk_revenue': PINK, 'sh_revenue': PURPLE,
+        'meta_roas': AMBER, 'meta_cpa': RED, 'meta_spend': AMBER,
+        'cac': RED, 'blended_aov': CYAN,
+        'gross_margin': GREEN, 'total_orders': BLUE, 'returning_pct': CYAN,
+        'active_subscribers': PURPLE, 'inventory_alerts': RED,
+        'us_tacos': AMBER, 'us_ppc_spend': AMBER, 'us_acos': AMBER, 'us_organic_pct': GREEN,
+        'us_orders': BLUE, 'us_aov': CYAN, 'us_units': BLUE, 'us_sessions': PURPLE,
+        'uk_tacos': AMBER, 'uk_ppc_spend': AMBER, 'uk_acos': AMBER, 'uk_organic_pct': GREEN,
+        'uk_orders': BLUE, 'uk_aov': CYAN, 'uk_units': BLUE,
+        'sh_orders': BLUE, 'sh_aov': CYAN, 'sh_new_customers': GREEN,
+        'sh_sessions': PURPLE, 'sh_cvr': GREEN, 'sh_cart_abandon': RED, 'sh_returning': CYAN
     };
 
-    var SCALES = {
-        'meta_roas':{min:0,max:5,u:'x'},'gross_margin':{min:0,max:100,u:'%'},'returning_pct':{min:0,max:100,u:'%'},
-        'us_tacos':{min:0,max:30,u:'%'},'uk_tacos':{min:0,max:30,u:'%'},'us_acos':{min:0,max:50,u:'%'},
-        'uk_acos':{min:0,max:50,u:'%'},'sh_cvr':{min:0,max:10,u:'%'},'sh_cart_abandon':{min:0,max:100,u:'%'},
-        'sh_returning':{min:0,max:100,u:'%'},'meta_cpa':{min:0,max:30,u:'$'},'cac':{min:0,max:50,u:'$'},
-        'us_organic_pct':{min:0,max:100,u:'%'},'uk_organic_pct':{min:0,max:100,u:'%'},'sh_new_customers':{min:0,max:100,u:'%'},
+    var SEC_LABELS = {
+        'revenue':'Revenue','efficiency':'Efficiency','health':'Health',
+        'performance':'Performance','advertising':'Advertising',
+        'sales':'Sales','traffic':'Traffic'
     };
-
-    var SEC_COL = {'revenue':'#2563EB','efficiency':'#8B5CF6','health':'#059669','performance':'#2563EB','advertising':'#F59E0B','sales':'#8B5CF6','traffic':'#06B6D4'};
 
     // ── Helpers ──
     function destroyCharts() { charts.forEach(function(c){c.destroy();}); charts=[]; }
@@ -220,9 +190,9 @@
         if (v===null||v===undefined) return '\u2014';
         switch(f){
             case 'currency': return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-            case 'currency_compact': return v>=10000?'$'+(v/1000).toFixed(1)+'k':'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+            case 'currency_compact': return v>=10000?'$'+(v/1000).toFixed(1)+'k':'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
             case 'currency_gbp': return '\u00A3'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
-            case 'currency_gbp_compact': return v>=10000?'\u00A3'+(v/1000).toFixed(1)+'k':'\u00A3'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+            case 'currency_gbp_compact': return v>=10000?'\u00A3'+(v/1000).toFixed(1)+'k':'\u00A3'+Number(v).toLocaleString('en-GB',{minimumFractionDigits:0,maximumFractionDigits:0});
             case 'multiplier': return Number(v).toFixed(2)+'x';
             case 'percent': return Number(v).toFixed(1)+'%';
             case 'number': return Number(v).toLocaleString();
@@ -236,200 +206,122 @@
         var arr=ch===0?'':ch>0?'\u2191':'\u2193', sg=ch>0?'+':'';
         return '<span class="change-badge '+cls+'">'+arr+' '+sg+ch.toFixed(1)+'%</span>';
     }
-    function sColor(ch,inv){if(!ch&&ch!==0)return'#94A3B8';return(inv?ch<0:ch>0)?'#22C55E':'#EF4444';}
 
-    // ── SVG Sparkline: FULL width, BELOW number ──
+    // ── SVG Sparkline: subtle, below the number ──
     function spark(data,color) {
         if(!data||data.length<2) return '';
-        var w=240,h=64,p=3,mn=Math.min.apply(null,data),mx=Math.max.apply(null,data),rng=mx-mn||1;
+        var w=200,h=48,p=2,mn=Math.min.apply(null,data),mx=Math.max.apply(null,data),rng=mx-mn||1;
         var pts=data.map(function(v,i){return(p+(i/(data.length-1))*(w-p*2)).toFixed(1)+','+(p+(1-(v-mn)/rng)*(h-p*2)).toFixed(1);}).join(' ');
         var fX=p.toFixed(1),lX=(p+(w-p*2)).toFixed(1);
         var fill=pts+' '+lX+','+(h-p)+' '+fX+','+(h-p);
         return '<svg class="w-full" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" fill="none" style="display:block;">' +
-            '<polygon points="'+fill+'" fill="'+color+'" opacity="0.15"/>' +
-            '<polyline points="'+pts+'" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+            '<polygon points="'+fill+'" fill="'+color+'" opacity="0.1"/>' +
+            '<polyline points="'+pts+'" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/></svg>';
     }
 
-    // ── Progress Ring: 150px, centered below number ──
-    function ring(kpi,sz) {
-        if(!kpi.target||kpi.progress===undefined) return '';
-        var pct=Math.min(kpi.progress,100),r=44,c=2*Math.PI*r,d=(pct/100)*c;
-        var col=pct<25?'#EF4444':pct<50?'#F59E0B':pct<75?'#3B82F6':'#22C55E';
-        var isDark=(CFG[kpi.key]||{}).bg==='card-dark';
-        var tc=isDark?'rgba(255,255,255,0.08)':'#F1F5F9',fc=isDark?'#FFF':'#0F172A',sc=isDark?'rgba(255,255,255,0.35)':'#94A3B8';
-        var tgt=(kpi.format==='currency_gbp'||kpi.format==='currency_gbp_compact'?'\u00A3':'$')+(kpi.target>=1000?(kpi.target/1000).toFixed(0)+'k':kpi.target);
-        sz=sz||150;
-        return '<svg viewBox="0 0 100 100" width="'+sz+'" height="'+sz+'" style="display:block;margin:0 auto;">' +
-            '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="'+tc+'" stroke-width="6"/>' +
-            '<circle cx="50" cy="50" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+d.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 50 50)"/>' +
-            '<text x="50" y="44" text-anchor="middle" font-size="22" fill="'+fc+'" font-weight="800" font-family="Fira Code,monospace">'+pct.toFixed(0)+'%</text>' +
-            '<text x="50" y="62" text-anchor="middle" font-size="9" fill="'+sc+'" font-family="Inter,sans-serif">of '+tgt+'</text></svg>';
+    // ── Progress Ring: small, inline ──
+    function ringSmall(pct,color) {
+        var r=16,c=2*Math.PI*r,d=(Math.min(pct,100)/100)*c;
+        return '<svg viewBox="0 0 40 40" width="40" height="40" style="display:inline-block;vertical-align:middle;">' +
+            '<circle cx="20" cy="20" r="'+r+'" fill="none" stroke="#282D3A" stroke-width="3"/>' +
+            '<circle cx="20" cy="20" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="3" stroke-linecap="round" stroke-dasharray="'+d.toFixed(1)+' '+c.toFixed(1)+'" transform="rotate(-90 20 20)"/>' +
+            '<text x="20" y="21" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="white" font-weight="700" font-family="Fira Code,monospace">'+Math.round(pct)+'</text></svg>';
     }
 
-    // ── Gauge: full-width, number inside, no separate value shown ──
-    function gauge(kpi) {
-        var s=SCALES[kpi.key]||{min:0,max:100,u:'%'},v=Number(kpi.value)||0;
-        var pct=Math.min(Math.max((v-s.min)/(s.max-s.min),0),1),arcL=126,fill=pct*arcL;
-        var col=kpi.invert?(pct>0.7?'#EF4444':pct>0.4?'#F59E0B':'#22C55E'):(pct<0.3?'#EF4444':pct<0.6?'#F59E0B':'#22C55E');
-        return '<div class="flex flex-col items-center mt-3">' +
-            '<svg viewBox="0 0 100 60" class="w-full" style="max-width:220px;display:block;">' +
-                '<path d="M10 54 A 40 40 0 0 1 90 54" fill="none" stroke="#E5E7EB" stroke-width="8" stroke-linecap="round"/>' +
-                '<path d="M10 54 A 40 40 0 0 1 90 54" fill="none" stroke="'+col+'" stroke-width="8" stroke-linecap="round" stroke-dasharray="'+fill.toFixed(1)+' '+arcL+'"/>' +
-                '<text x="50" y="50" text-anchor="middle" font-size="20" fill="#0F172A" font-weight="800" font-family="Fira Code,monospace">'+fmt(kpi.value,kpi.format)+'</text>' +
-            '</svg>' +
-            '<div class="flex justify-between w-full px-2 -mt-1" style="max-width:220px;">' +
-                '<span class="text-[10px] text-slate-400 font-mono">'+s.min+s.u+'</span>' +
-                '<span class="text-[10px] text-slate-400 font-mono">'+s.max+s.u+'</span></div></div>';
-    }
+    // ═══ CARD BUILDER: One unified card with sparkline ═══
+    function kpiCard(kpi,delay) {
+        var color = KPI_COLORS[kpi.key] || PURPLE;
+        var isHero = kpi.hero;
+        var cls = isHero ? 'card card-hero anim' : 'card anim';
+        var hasTarget = kpi.target && kpi.progress !== undefined;
 
-    // ── Horizontal bar ──
-    function bar(kpi) {
-        var s=SCALES[kpi.key]||{min:0,max:100,u:'%'},v=Number(kpi.value)||0;
-        var pct=Math.min(Math.max((v-s.min)/(s.max-s.min)*100,0),100);
-        var col=kpi.invert?(pct>70?'#EF4444':pct>40?'#F59E0B':'#22C55E'):(pct<30?'#EF4444':pct<60?'#F59E0B':'#22C55E');
-        return '<div class="mt-5"><div class="h-3 bg-slate-100 rounded-full overflow-hidden"><div class="h-full rounded-full" style="width:'+pct+'%;background:'+col+';transition:width 0.7s ease"></div></div>' +
-            '<div class="flex justify-between mt-1.5"><span class="text-[10px] text-slate-400 font-mono">'+s.min+'</span><span class="text-[10px] text-slate-400 font-mono">'+s.max+s.u+'</span></div></div>';
-    }
+        var h = '<div class="'+cls+'" style="animation-delay:'+(delay||0)+'ms">';
 
-    // ── Status dots ──
-    function dots(kpi) {
-        var n=Number(kpi.value)||0;
-        if(n===0) return '<div class="flex items-center gap-2 mt-4"><div class="w-4 h-4 rounded-full bg-emerald-500"></div><span class="text-sm text-emerald-600 font-semibold">All clear</span></div>';
-        var h='';for(var i=0;i<Math.min(n,10);i++) h+='<div class="w-4 h-4 rounded-full '+(i<2?'bg-red-500':'bg-amber-400')+'"></div>';
-        if(n>10) h+='<span class="text-xs text-slate-400 font-mono ml-1">+' + (n-10) + '</span>';
-        return '<div class="flex flex-wrap items-center gap-2 mt-4">'+h+'</div>';
-    }
+        // Label row
+        h += '<div class="flex items-center justify-between mb-3">';
+        h += '<span class="text-[11px] font-semibold text-[#64748B] uppercase tracking-widest">'+esc(kpi.label)+'</span>';
+        h += badge(kpi.change,kpi.invert);
+        h += '</div>';
 
-    // ═══════════════════════════════════════════
-    //  CARD BUILDERS: each type = unique shape
-    // ═══════════════════════════════════════════
-
-    // RING CARD: big number, then big ring below, centered
-    function ringCard(kpi, isHero) {
-        var c=CFG[kpi.key]||{}, dk=c.bg==='card-dark';
-        var lbl=dk?'text-white/50':'text-slate-500', val=dk?'text-white':'text-slate-900', det=dk?'text-white/35':'text-slate-400';
-        if(!kpi.target||kpi.progress===undefined) return sparkCard(kpi); // fallback
-        var sz=isHero?170:130;
-        return '<div class="card '+c.bg+' anim'+(isHero?' bento-hero':'')+'">' +
-            '<div class="flex items-center justify-between mb-3"><span class="text-[11px] font-bold '+lbl+' uppercase tracking-widest">'+esc(kpi.label)+'</span>'+badge(kpi.change,kpi.invert)+'</div>' +
-            '<div class="text-[36px] font-extrabold font-mono '+val+' leading-none tracking-tight">'+fmt(kpi.value,kpi.format)+'</div>' +
-            (kpi.detail?'<p class="text-[11px] '+det+' mt-1.5">'+esc(kpi.detail)+'</p>':'') +
-            '<div class="mt-5">'+ring(kpi,sz)+'</div></div>';
-    }
-
-    // GAUGE CARD: label, then gauge fills center (number inside gauge, not separate)
-    function gaugeCard(kpi) {
-        var c=CFG[kpi.key]||{};
-        return '<div class="card '+c.bg+' anim">' +
-            '<div class="flex items-center justify-between mb-1"><span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">'+esc(kpi.label)+'</span>'+badge(kpi.change,kpi.invert)+'</div>' +
-            gauge(kpi) +
-            (kpi.detail?'<p class="text-[11px] text-slate-400 mt-2 text-center">'+esc(kpi.detail)+'</p>':'') +
-        '</div>';
-    }
-
-    // SPARKLINE CARD: number on top, full-width sparkline fills bottom
-    function sparkCard(kpi) {
-        var c=CFG[kpi.key]||{}, dk=c.bg==='card-dark';
-        var lbl=dk?'text-white/50':'text-slate-500', val=dk?'text-white':'text-slate-900', det=dk?'text-white/35':'text-slate-400';
-        var sc=dk?'rgba(255,255,255,0.4)':sColor(kpi.change,kpi.invert);
-        return '<div class="card '+c.bg+' anim">' +
-            '<div class="flex items-center justify-between mb-3"><span class="text-[11px] font-bold '+lbl+' uppercase tracking-widest">'+esc(kpi.label)+'</span>'+badge(kpi.change,kpi.invert)+'</div>' +
-            '<div class="text-[32px] font-extrabold font-mono '+val+' leading-none tracking-tight">'+fmt(kpi.value,kpi.format)+'</div>' +
-            (kpi.detail?'<p class="text-[11px] '+det+' mt-1.5">'+esc(kpi.detail)+'</p>':'') +
-            '<div class="mt-5">'+spark(kpi.sparkline,sc)+'</div></div>';
-    }
-
-    // BAR CARD: number on top, full-width bar below
-    function barCard(kpi) {
-        var c=CFG[kpi.key]||{};
-        return '<div class="card '+c.bg+' anim">' +
-            '<div class="flex items-center justify-between mb-3"><span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">'+esc(kpi.label)+'</span>'+badge(kpi.change,kpi.invert)+'</div>' +
-            '<div class="text-[32px] font-extrabold font-mono text-slate-900 leading-none tracking-tight">'+fmt(kpi.value,kpi.format)+'</div>' +
-            (kpi.detail?'<p class="text-[11px] text-slate-400 mt-1.5">'+esc(kpi.detail)+'</p>':'') +
-            bar(kpi) + '</div>';
-    }
-
-    // STATUS CARD: number + colored dots
-    function dotsCard(kpi) {
-        return '<div class="card anim">' +
-            '<div class="flex items-center justify-between mb-3"><span class="text-[11px] font-bold text-slate-500 uppercase tracking-widest">'+esc(kpi.label)+'</span></div>' +
-            '<div class="text-[32px] font-extrabold font-mono text-slate-900 leading-none tracking-tight">'+fmt(kpi.value,kpi.format)+'</div>' +
-            (kpi.detail?'<p class="text-[11px] text-slate-400 mt-1.5">'+esc(kpi.detail)+'</p>':'') +
-            dots(kpi) + '</div>';
-    }
-
-    // ── Dispatch ──
-    function kpiCard(kpi, isHero) {
-        var c=CFG[kpi.key]||{viz:'spark'};
-        switch(c.viz){
-            case 'ring': return ringCard(kpi,isHero);
-            case 'gauge': return gaugeCard(kpi);
-            case 'bar': return barCard(kpi);
-            case 'dots': return dotsCard(kpi);
-            default: return sparkCard(kpi);
+        // Value row with optional ring
+        h += '<div class="flex items-center justify-between">';
+        h += '<div class="text-[28px] font-bold font-mono text-white leading-none tracking-tight">'+fmt(kpi.value,kpi.format)+'</div>';
+        if(hasTarget) {
+            h += ringSmall(kpi.progress, color);
         }
+        h += '</div>';
+
+        // Detail
+        if(kpi.detail) h += '<p class="text-[11px] text-[#475569] mt-2">'+esc(kpi.detail)+'</p>';
+
+        // Target label
+        if(hasTarget) {
+            var sym = (kpi.format==='currency_gbp'||kpi.format==='currency_gbp_compact') ? '\u00A3' : '$';
+            var tgt = kpi.target>=1000 ? sym+(kpi.target/1000).toFixed(0)+'k' : sym+kpi.target;
+            h += '<p class="text-[10px] text-[#475569] mt-1 font-mono">'+kpi.progress.toFixed(1)+'% of '+tgt+' target</p>';
+        }
+
+        // Sparkline
+        h += '<div class="mt-4">'+spark(kpi.sparkline,color)+'</div>';
+
+        h += '</div>';
+        return h;
     }
 
     // ── Section Header ──
-    function secHeader(title,group) {
-        var col=SEC_COL[group]||'#64748B';
-        return '<div class="flex items-center gap-3 mb-4"><div class="w-2.5 h-2.5 rounded-full" style="background:'+col+'"></div>' +
-            '<h2 class="text-[13px] font-bold text-slate-600 uppercase tracking-widest">'+esc(title)+'</h2>' +
-            '<div class="flex-1 h-px bg-slate-200/50"></div></div>';
+    function secHeader(group) {
+        var title = SEC_LABELS[group] || group;
+        return '<div class="flex items-center gap-3 mt-2 mb-4"><div class="w-1.5 h-1.5 rounded-full" style="background:'+PURPLE+'"></div>' +
+            '<span class="text-[11px] font-bold text-[#64748B] uppercase tracking-[0.15em]">'+esc(title)+'</span>' +
+            '<div class="flex-1 h-px" style="background: rgba(255,255,255,0.04)"></div></div>';
     }
 
-    // ── Revenue Bento (hero left 2 rows, 4 cards right) ──
-    function revenueBento(kpis) {
-        var rev=kpis.filter(function(k){return k.group==='revenue';});
-        if(!rev.length) return '';
-        var hero=rev[0], rest=rev.slice(1);
-        return secHeader('Revenue','revenue') +
-            '<div class="bento-revenue">' + kpiCard(hero,true) + rest.map(function(k){return kpiCard(k,false);}).join('') + '</div>';
-    }
-
-    // ── Standard KPI Grid ──
-    function kpiGrid(kpis,group,title) {
-        var f=kpis.filter(function(k){return k.group===group;});
-        if(!f.length) return '';
-        var cols=f.length<=3?'grid-cols-3':f.length<=4?'grid-cols-4':'grid-cols-5';
-        return secHeader(title,group)+'<div class="grid gap-4 bento-5 '+cols+'">'+f.map(function(k){return kpiCard(k,false);}).join('')+'</div>';
-    }
-
-    // ── Headline Strip: 4 hero numbers ──
+    // ── Headlines: 4 hero KPI cards ──
     function headlines(items) {
         if(!items||!items.length) return '';
-        return '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">'+items.map(function(item,i) {
+        return '<div class="kpi-grid-4">'+items.map(function(item,i) {
             var b='';
             if(item.change!==null&&item.change!==undefined) b=badge(item.change,item.invert);
             else if(item.status) {
-                var sc=item.status==='warning'?'bg-amber-50 text-amber-600':item.status==='critical'?'bg-red-50 text-red-600':'bg-emerald-50 text-emerald-600';
+                var sc=item.status==='warning'?'bg-amber-900/30 text-amber-400':item.status==='critical'?'bg-red-900/30 text-red-400':'bg-emerald-900/30 text-emerald-400';
                 b='<span class="change-badge '+sc+'">'+esc(item.detail||'')+'</span>';
             }
-            var first=i===0, cc=first?'card card-dark anim':'card anim';
-            var vc=first?'text-white':'text-slate-900', lc=first?'text-white/50':'text-slate-500';
-            return '<div class="'+cc+'" style="animation-delay:'+(i*60)+'ms">' +
-                '<div class="text-[44px] font-extrabold font-mono '+vc+' leading-none tracking-tight">'+fmt(item.value,item.format)+'</div>' +
-                '<div class="flex items-center justify-between mt-3"><span class="text-[11px] font-bold '+lc+' uppercase tracking-widest">'+esc(item.label)+'</span>'+b+'</div></div>';
+            var first=i===0;
+            return '<div class="card'+(first?' card-hero':'')+' anim" style="animation-delay:'+(i*60)+'ms">' +
+                '<span class="text-[11px] font-semibold text-[#64748B] uppercase tracking-widest">'+esc(item.label)+'</span>' +
+                '<div class="text-[36px] font-bold font-mono text-white leading-none tracking-tight mt-3">'+fmt(item.value,item.format)+'</div>' +
+                '<div class="mt-3">'+b+'</div></div>';
         }).join('')+'</div>';
     }
 
-    // ── Pulse Summary ──
+    // ── Pulse ──
     function pulse(view) {
         var parts=[],hl=view.headline||[],r=hl[0];
-        if(r&&r.change) parts.push('Revenue '+(r.change>0?'up':'down')+' <strong>'+Math.abs(r.change).toFixed(1)+'%</strong> WoW');
+        if(r&&r.change) parts.push('Revenue '+(r.change>0?'up':'down')+' <strong class="text-white">'+Math.abs(r.change).toFixed(1)+'%</strong>');
         var al=view.inventory_alerts||[],cr=al.filter(function(a){return a.severity==='critical';}).length,wr=al.filter(function(a){return a.severity==='warning';}).length;
-        if(cr+wr>0) parts.push('<strong>'+(cr+wr)+'</strong> item'+(cr+wr>1?'s':'')+' need restocking');
+        if(cr+wr>0) parts.push('<strong class="text-white">'+(cr+wr)+'</strong> item'+(cr+wr>1?'s':'')+' need restocking');
         var rk=(view.kpis||[]).find(function(k){return k.key==='meta_roas';});
-        if(rk&&rk.value) parts.push('Meta ROAS at <strong>'+rk.value.toFixed(1)+'x</strong>');
+        if(rk&&rk.value) parts.push('Meta ROAS at <strong class="text-white">'+rk.value.toFixed(1)+'x</strong>');
         if(!parts.length) return '';
-        return '<div class="card" style="background:linear-gradient(135deg,#EFF6FF 0%,#F0F9FF 100%);">' +
-            '<div class="flex items-center justify-center gap-2"><svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' +
-            '<p class="text-sm text-blue-700 font-medium">'+parts.join(' <span class="text-blue-300 mx-1">\u00B7</span> ')+'</p></div></div>';
+        return '<div class="card anim" style="background: linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(6,182,212,0.05) 100%); animation-delay: 250ms;">' +
+            '<div class="flex items-center justify-center gap-2"><svg class="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>' +
+            '<p class="text-sm text-[#94A3B8]">'+parts.join(' <span class="text-[#334155] mx-1">\u00B7</span> ')+'</p></div></div>';
     }
 
-    // ── Channel Badge / Trend ──
-    function chBadge(ch){var c=ch==='Shopify'?'bg-purple-50 text-purple-600':ch==='Amazon US'?'bg-blue-50 text-blue-600':'bg-pink-50 text-pink-600';return '<span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full '+c+'">'+esc(ch)+'</span>';}
-    function trend(t){return t==='up'?'<span class="text-emerald-600 font-bold">\u2191</span>':t==='down'?'<span class="text-red-600 font-bold">\u2193</span>':'<span class="text-slate-400">\u2192</span>';}
+    // ── KPI Section ──
+    function kpiSection(kpis,group) {
+        var f=kpis.filter(function(k){return k.group===group;});
+        if(!f.length) return '';
+        var cls=f.length<=4?'kpi-grid-4':'kpi-grid-5';
+        return secHeader(group)+'<div class="'+cls+'">'+f.map(function(k,i){return kpiCard(k,300+i*60);}).join('')+'</div>';
+    }
+
+    // ── Channel Badge ──
+    function chBadge(ch){
+        var c=ch==='Shopify'?'bg-purple-500/10 text-purple-400':ch==='Amazon US'?'bg-blue-500/10 text-blue-400':'bg-pink-500/10 text-pink-400';
+        return '<span class="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-md '+c+'">'+esc(ch)+'</span>';
+    }
+    function trend(t){return t==='up'?'<span class="text-emerald-400">\u2191</span>':t==='down'?'<span class="text-red-400">\u2193</span>':'<span class="text-[#475569]">\u2192</span>';}
 
     // ── Products Table ──
     function prodTable(prods,title,showCh,showBsr) {
@@ -437,119 +329,120 @@
         var mx=Math.max.apply(null,prods.map(function(p){return p.revenue;}));
         var hd='<th class="text-left pb-3 pl-4 w-8">#</th><th class="text-left pb-3">Product</th>';
         if(showCh) hd+='<th class="text-left pb-3">Channel</th>';
-        hd+='<th class="text-left pb-3 w-48">Revenue</th><th class="text-right pb-3">Units</th>';
+        hd+='<th class="text-left pb-3 w-40">Revenue</th><th class="text-right pb-3">Units</th>';
         if(showBsr) hd+='<th class="text-right pb-3">BSR</th>';
         hd+='<th class="text-right pb-3">CVR</th><th class="text-center pb-3 pr-4 w-8"></th>';
         var rows=prods.map(function(p,i){
             var cvr=p.conversion_rate?p.conversion_rate.toFixed(1)+'%':'\u2014';
-            var rc=i<3?'text-blue-600 font-bold':'text-slate-400';
-            var bp=mx>0?(p.revenue/mx*100):0,bc=i<3?'#2563EB':i<7?'#60A5FA':'#CBD5E1';
-            var rv='<td class="py-3 text-sm"><div class="flex items-center gap-3"><span class="font-mono text-slate-900 w-20 text-right font-medium">$'+Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+'</span>' +
+            var rc=i<3?'text-purple-400 font-bold':'text-[#475569]';
+            var bp=mx>0?(p.revenue/mx*100):0;
+            var bc=i<3?PURPLE:i<7?'#6D28D9':'#282D3A';
+            var rv='<td class="py-3 text-sm"><div class="flex items-center gap-3"><span class="font-mono text-[#E2E8F0] w-16 text-right text-[13px]">$'+Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})+'</span>' +
                 '<div class="flex-1 revenue-bar-bg"><div class="revenue-bar-fill" style="width:'+bp.toFixed(0)+'%;background:'+bc+'"></div></div></div></td>';
-            var r='<td class="py-3 pl-4 text-xs font-mono '+rc+'">'+(i+1)+'</td><td class="py-3 text-sm text-slate-700 max-w-[220px] truncate font-medium">'+esc(p.name)+'</td>';
+            var r='<td class="py-3 pl-4 text-xs font-mono '+rc+'">'+(i+1)+'</td><td class="py-3 text-sm text-[#CBD5E1] max-w-[200px] truncate">'+esc(p.name)+'</td>';
             if(showCh) r+='<td class="py-3">'+chBadge(p.channel)+'</td>';
-            r+=rv+'<td class="py-3 text-sm font-mono text-right text-slate-500">'+p.units+'</td>';
-            if(showBsr) r+='<td class="py-3 text-sm font-mono text-right text-slate-400">#'+(p.bsr||'\u2014')+'</td>';
-            r+='<td class="py-3 text-sm font-mono text-right text-slate-500">'+cvr+'</td><td class="py-3 text-center pr-4">'+trend(p.trend)+'</td>';
-            return '<tr class="border-b border-gray-50 product-row">'+r+'</tr>';
+            r+=rv+'<td class="py-3 text-sm font-mono text-right text-[#94A3B8]">'+p.units+'</td>';
+            if(showBsr) r+='<td class="py-3 text-sm font-mono text-right text-[#64748B]">#'+(p.bsr||'\u2014')+'</td>';
+            r+='<td class="py-3 text-sm font-mono text-right text-[#94A3B8]">'+cvr+'</td><td class="py-3 text-center pr-4">'+trend(p.trend)+'</td>';
+            return '<tr class="border-b border-white/[0.03] product-row">'+r+'</tr>';
         }).join('');
-        return '<div class="card"><div class="flex items-center justify-between mb-4"><h2 class="text-[15px] font-bold text-slate-900">'+esc(title)+'</h2>' +
-            '<span class="text-xs font-mono text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full">'+prods.length+' items</span></div>' +
-            '<div class="overflow-x-auto"><table class="w-full"><thead><tr class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100">'+hd+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+        return '<div class="card"><div class="flex items-center justify-between mb-4"><span class="text-[14px] font-semibold text-white">'+esc(title)+'</span>' +
+            '<span class="text-[11px] font-mono text-[#64748B] px-2.5 py-1 rounded-md" style="background:#282D3A">'+prods.length+' items</span></div>' +
+            '<div class="overflow-x-auto"><table class="w-full"><thead><tr class="text-[10px] font-semibold text-[#475569] uppercase tracking-wider border-b border-white/[0.05]">'+hd+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
     }
 
     // ── Alerts ──
     function alerts(al,title) {
         if(!al) al=[];
         var cr=al.filter(function(a){return a.severity==='critical';}).length, wr=al.filter(function(a){return a.severity==='warning';}).length;
-        var bdg=al.length>0?'<div class="flex items-center gap-2">'+(cr>0?'<span class="text-xs font-mono px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-bold">'+cr+' critical</span>':'')+(wr>0?'<span class="text-xs font-mono px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 font-bold">'+wr+' warning</span>':'')+'</div>':'<span class="text-xs font-mono px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 font-bold">All clear</span>';
+        var bdg=al.length>0?'<div class="flex items-center gap-2">'+(cr>0?'<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-red-500/10 text-red-400 font-bold">'+cr+' critical</span>':'')+(wr>0?'<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 font-bold">'+wr+' warning</span>':'')+'</div>':'<span class="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-400 font-bold">All clear</span>';
         var items;
-        if(al.length>0){items=al.map(function(a){var ic=a.severity==='critical',bc=ic?'status-critical bg-red-50/50':'status-warning bg-amber-50/30',nm=a.product||a.name||a.sku;
-            var chip=ic?'<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">OUT OF STOCK</span>':'<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">'+(a.inventory||0)+' left</span>';
-            return '<div class="px-3 py-2.5 rounded-xl '+bc+'"><div class="flex items-center justify-between"><span class="text-sm text-slate-700 truncate max-w-[180px] font-medium">'+esc(nm)+'</span>'+chip+'</div>' +
-                '<p class="text-[11px] text-slate-400 mt-0.5">'+esc(a.source||'')+(a.sku?' \u00B7 '+esc(a.sku):'')+'</p></div>';}).join('');}
-        else{items='<div class="flex flex-col items-center py-8 text-slate-400"><svg class="w-10 h-10 mb-2 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="text-sm font-medium">All stock healthy</p></div>';}
-        return '<div class="card"><div class="flex items-center justify-between mb-3"><h2 class="text-[15px] font-bold text-slate-900">'+esc(title||'Inventory Alerts')+'</h2>'+bdg+'</div><div class="space-y-2 max-h-60 overflow-y-auto">'+items+'</div></div>';
+        if(al.length>0){items=al.map(function(a){var ic=a.severity==='critical',bc=ic?'status-critical':'status-warning';
+            var chip=ic?'<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-500/10 text-red-400">OOS</span>':'<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400">'+(a.inventory||0)+' left</span>';
+            var nm=a.product||a.name||a.sku;
+            return '<div class="px-3 py-2.5 rounded-xl '+bc+'" style="background:rgba(255,255,255,0.02)"><div class="flex items-center justify-between"><span class="text-sm text-[#CBD5E1] truncate max-w-[160px]">'+esc(nm)+'</span>'+chip+'</div>' +
+                '<p class="text-[10px] text-[#475569] mt-1">'+esc(a.source||'')+(a.sku?' \u00B7 '+esc(a.sku):'')+'</p></div>';}).join('');}
+        else{items='<div class="flex flex-col items-center py-6 text-[#475569]"><svg class="w-8 h-8 mb-2 text-emerald-500/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="text-sm">All stock healthy</p></div>';}
+        return '<div class="card"><div class="flex items-center justify-between mb-3"><span class="text-[14px] font-semibold text-white">'+esc(title||'Inventory Alerts')+'</span>'+bdg+'</div><div class="space-y-2 max-h-60 overflow-y-auto">'+items+'</div></div>';
     }
 
     // ── Meta Campaigns ──
     function campaigns(camp) {
         if(!camp||!camp.length) return '';
-        var its=camp.map(function(c){var rc=c.roas>=2?'text-emerald-600 bg-emerald-50':c.roas>=1?'text-amber-600 bg-amber-50':'text-red-600 bg-red-50';
-            return '<div class="px-3 py-3 rounded-xl bg-slate-50/80 hover:bg-blue-50/50 transition-colors"><div class="flex items-center justify-between"><p class="text-sm text-slate-700 truncate font-medium max-w-[200px]">'+esc(c.name)+'</p>' +
-                '<span class="text-xs font-mono px-2 py-0.5 rounded-full '+rc+' font-bold">'+c.roas.toFixed(1)+'x</span></div>' +
-                '<div class="flex items-center gap-4 mt-2 text-[11px] font-mono text-slate-400"><span>$'+c.spend.toFixed(0)+' spend</span><span>'+c.purchases+' sales</span></div></div>';}).join('');
+        var its=camp.map(function(c){var rc=c.roas>=2?'text-emerald-400 bg-emerald-500/10':c.roas>=1?'text-amber-400 bg-amber-500/10':'text-red-400 bg-red-500/10';
+            return '<div class="px-3 py-3 rounded-xl" style="background:rgba(255,255,255,0.02)"><div class="flex items-center justify-between"><p class="text-sm text-[#CBD5E1] truncate max-w-[180px]">'+esc(c.name)+'</p>' +
+                '<span class="text-[10px] font-mono px-2 py-0.5 rounded-md '+rc+' font-bold">'+c.roas.toFixed(1)+'x</span></div>' +
+                '<div class="flex items-center gap-4 mt-1.5 text-[10px] font-mono text-[#475569]"><span>$'+c.spend.toFixed(0)+'</span><span>'+c.purchases+' sales</span></div></div>';}).join('');
         var ts=camp.reduce(function(s,c){return s+c.spend;},0),ar=camp.reduce(function(s,c){return s+c.roas*c.spend;},0)/ts;
-        return '<div class="card"><div class="flex items-center justify-between mb-3"><h2 class="text-[15px] font-bold text-slate-900">Meta Campaigns</h2>' +
-            '<div class="flex items-center gap-2"><span class="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">'+camp.length+' active</span>' +
-            '<span class="text-xs font-mono text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold">'+ar.toFixed(1)+'x avg</span></div></div>' +
+        return '<div class="card"><div class="flex items-center justify-between mb-3"><span class="text-[14px] font-semibold text-white">Meta Campaigns</span>' +
+            '<span class="text-[10px] font-mono text-purple-400 px-2 py-0.5 rounded-md bg-purple-500/10 font-bold">'+ar.toFixed(1)+'x avg</span></div>' +
             '<div class="space-y-2 max-h-60 overflow-y-auto">'+its+'</div></div>';
     }
 
     // ── Landing Pages ──
     function landingPages(pages) {
         if(!pages||!pages.length) return '';
-        var rows=pages.map(function(p){return '<tr class="border-b border-gray-50 product-row"><td class="py-2.5 text-sm text-blue-600 font-mono truncate max-w-[200px]">'+esc(p.page)+'</td>' +
-            '<td class="py-2.5 text-sm font-mono text-right text-slate-700">'+Number(p.sessions).toLocaleString()+'</td>' +
-            '<td class="py-2.5 text-sm font-mono text-right text-slate-500">'+p.conversion_rate.toFixed(1)+'%</td>' +
-            '<td class="py-2.5 text-sm font-mono text-right text-slate-900 font-medium">$'+Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:0})+'</td></tr>';}).join('');
-        return '<div class="card"><h2 class="text-[15px] font-bold text-slate-900 mb-4">Top Landing Pages</h2><div class="overflow-x-auto"><table class="w-full">' +
-            '<thead><tr class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100"><th class="text-left pb-3">Page</th><th class="text-right pb-3">Sessions</th><th class="text-right pb-3">CVR</th><th class="text-right pb-3">Revenue</th></tr></thead>' +
+        var rows=pages.map(function(p){return '<tr class="border-b border-white/[0.03] product-row"><td class="py-2.5 text-sm text-purple-400 font-mono truncate max-w-[180px]">'+esc(p.page)+'</td>' +
+            '<td class="py-2.5 text-sm font-mono text-right text-[#94A3B8]">'+Number(p.sessions).toLocaleString()+'</td>' +
+            '<td class="py-2.5 text-sm font-mono text-right text-[#94A3B8]">'+p.conversion_rate.toFixed(1)+'%</td>' +
+            '<td class="py-2.5 text-sm font-mono text-right text-white">$'+Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:0})+'</td></tr>';}).join('');
+        return '<div class="card"><span class="text-[14px] font-semibold text-white mb-4 block">Top Landing Pages</span><div class="overflow-x-auto"><table class="w-full">' +
+            '<thead><tr class="text-[10px] font-semibold text-[#475569] uppercase tracking-wider border-b border-white/[0.05]"><th class="text-left pb-3">Page</th><th class="text-right pb-3">Sessions</th><th class="text-right pb-3">CVR</th><th class="text-right pb-3">Revenue</th></tr></thead>' +
             '<tbody>'+rows+'</tbody></table></div></div>';
-    }
-
-    // ── Heatmap ──
-    function heatmap(ds) {
-        if(!ds) return '';var dates=Object.keys(ds).sort();if(!dates.length) return '';
-        var dt={},mx=0;dates.forEach(function(d){var day=ds[d],t=(day.shopify||0)+(day.amazon_us||0)+(day.amazon_uk||0);dt[d]=t;if(t>mx)mx=t;});
-        function cc(v){if(mx===0)return'#F1F5F9';var i=v/mx;return i<0.15?'#EFF6FF':i<0.35?'#BFDBFE':i<0.55?'#93C5FD':i<0.75?'#60A5FA':'#2563EB';}
-        var ld=new Date(dates[dates.length-1]+'T00:00:00'),dw=ld.getDay(),tc=35,so=tc-dates.length-(6-dw);
-        var cells=[];for(var i=0;i<tc;i++){var di=i-Math.max(0,so),ds2=di>=0&&di<dates.length?dates[di]:null,v=ds2?dt[ds2]||0:0;
-            cells.push('<div class="heatmap-cell" style="background:'+(ds2?cc(v):'#F8FAFC')+';" title="'+(ds2?ds2+': $'+v.toFixed(0):'')+'"></div>');}
-        var wks=[];for(var w=0;w<5;w++){var wc='';for(var d=0;d<7;d++)wc+=cells[w*7+d];wks.push('<div class="flex flex-col gap-[3px]">'+wc+'</div>');}
-        var dl='<div class="flex flex-col gap-[3px] mr-1.5 text-[9px] font-mono text-slate-400">'+['S','M','T','W','T','F','S'].map(function(l){return '<div style="height:14px;line-height:14px;">'+l+'</div>';}).join('')+'</div>';
-        var leg='<div class="flex items-center gap-1 mt-3 text-[10px] text-slate-400 font-mono"><span>Less</span>'+['#EFF6FF','#BFDBFE','#93C5FD','#60A5FA','#2563EB'].map(function(c){return '<div class="heatmap-cell" style="background:'+c+';width:10px;height:10px;"></div>';}).join('')+'<span>More</span></div>';
-        return '<div class="card"><h2 class="text-[15px] font-bold text-slate-900 mb-3">Daily Revenue Heatmap</h2><div class="flex items-start">'+dl+'<div class="flex gap-[3px]">'+wks.join('')+'</div></div>'+leg+'</div>';
     }
 
     // ── Channel Legend ──
     function chLegend(pct) {
-        if(!pct) return '';var colors={'Shopify':'#8B5CF6','Amazon US':'#2563EB','Amazon UK':'#EC4899'},bgs={'Shopify':'bg-purple-50','Amazon US':'bg-blue-50','Amazon UK':'bg-pink-50'};
-        return Object.keys(pct).map(function(ch){return '<div class="flex items-center justify-between py-2.5 px-3 rounded-xl '+(bgs[ch]||'')+'"><div class="flex items-center gap-2.5"><span class="w-3 h-3 rounded-full" style="background:'+(colors[ch]||'#94A3B8')+'"></span><span class="text-sm text-slate-600 font-semibold">'+ch+'</span></div><span class="font-mono text-sm font-bold text-slate-900">'+pct[ch]+'%</span></div>';}).join('');
+        if(!pct) return '';
+        var colors={'Shopify':PURPLE,'Amazon US':BLUE,'Amazon UK':PINK};
+        return Object.keys(pct).map(function(ch){
+            return '<div class="flex items-center justify-between py-2 px-3 rounded-lg" style="background:rgba(255,255,255,0.03)"><div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full" style="background:'+(colors[ch]||'#94A3B8')+'"></span><span class="text-[13px] text-[#94A3B8]">'+ch+'</span></div><span class="font-mono text-[13px] font-semibold text-white">'+pct[ch]+'%</span></div>';
+        }).join('');
     }
 
     // ── Footer ──
     function sources() {
-        var s=D.sources||{},ds=Object.keys(s).map(function(n){return '<div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full '+(s[n]?'bg-emerald-500':'bg-red-500')+'"></div><span class="text-[11px] font-mono text-slate-400 uppercase tracking-wide">'+n+'</span></div>';}).join('');
+        var s=D.sources||{},ds=Object.keys(s).map(function(n){return '<div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full '+(s[n]?'bg-emerald-500':'bg-red-500')+'"></div><span class="text-[10px] font-mono text-[#475569] uppercase tracking-wide">'+n+'</span></div>';}).join('');
         var ts=D.generated_at?new Date(D.generated_at).toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-        return '<div class="flex items-center justify-center gap-6 py-6 border-t border-slate-100 mt-8">'+ds+'<span class="text-[11px] text-slate-300 font-mono">|</span><span class="text-[11px] text-slate-400 font-mono">Updated '+ts+'</span><span class="text-[11px] text-slate-300 font-mono">|</span><span class="text-[11px] text-slate-400 font-mono">Hermes v8</span></div>';
+        return '<div class="flex items-center justify-center gap-6 py-6 mt-8" style="border-top:1px solid rgba(255,255,255,0.04)">'+ds+'<span class="text-[10px] text-[#334155] font-mono">|</span><span class="text-[10px] text-[#475569] font-mono">'+ts+'</span><span class="text-[10px] text-[#334155] font-mono">|</span><span class="text-[10px] text-[#475569] font-mono">Hermes v9</span></div>';
     }
 
     // ── Skeleton ──
     function skeleton() {
-        var s='';for(var i=0;i<4;i++)s+='<div class="skeleton h-36"></div>';
-        var s2='';for(var j=0;j<5;j++)s2+='<div class="skeleton h-48"></div>';
-        return '<div class="grid grid-cols-2 md:grid-cols-4 gap-4">'+s+'</div><div class="skeleton h-4 w-2/3 mx-auto rounded mt-6"></div><div class="grid grid-cols-5 gap-4 bento-5 mt-6">'+s2+'</div><div class="skeleton h-80 mt-6"></div>';
+        var s='';for(var i=0;i<4;i++)s+='<div class="skeleton h-32"></div>';
+        var s2='';for(var j=0;j<5;j++)s2+='<div class="skeleton h-40"></div>';
+        return '<div class="kpi-grid-4">'+s+'</div><div class="kpi-grid-5 mt-5">'+s2+'</div>';
     }
 
     // ── Chart Helpers ──
-    var ttStyle={backgroundColor:'#FFF',titleColor:'#0F172A',bodyColor:'#475569',borderColor:'#E2E8F0',borderWidth:1,titleFont:{family:'Inter',size:12,weight:'600'},bodyFont:{family:'Fira Code',size:11},padding:12,cornerRadius:12,boxPadding:4};
-    function grad(ctx,hex,h){var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);var gr=ctx.createLinearGradient(0,0,0,h);gr.addColorStop(0,'rgba('+r+','+g+','+b+',0.15)');gr.addColorStop(1,'rgba('+r+','+g+','+b+',0)');return gr;}
+    var ttStyle = {
+        backgroundColor:'#1A1D27', titleColor:'#FFF', bodyColor:'#94A3B8',
+        borderColor:'rgba(255,255,255,0.06)', borderWidth:1,
+        titleFont:{family:'Inter',size:12,weight:'600'}, bodyFont:{family:'Fira Code',size:11},
+        padding:12, cornerRadius:12, boxPadding:4
+    };
+    function grad(ctx,hex,h){
+        var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+        var gr=ctx.createLinearGradient(0,0,0,h);
+        gr.addColorStop(0,'rgba('+r+','+g+','+b+',0.2)');
+        gr.addColorStop(1,'rgba('+r+','+g+','+b+',0)');
+        return gr;
+    }
 
     function lineChart(id,labels,datasets) {
         var el=document.getElementById(id);if(!el)return;var ctx=el.getContext('2d');
-        var ds=datasets.map(function(d){return{label:d.label,data:d.data,borderColor:d.color,backgroundColor:grad(ctx,d.color,el.parentElement.clientHeight||320),fill:true,tension:0.4,borderWidth:2.5,pointRadius:0,pointHoverRadius:6,pointHoverBackgroundColor:d.color,pointHoverBorderColor:'#FFF',pointHoverBorderWidth:3};});
+        var ds=datasets.map(function(d){return{label:d.label,data:d.data,borderColor:d.color,backgroundColor:grad(ctx,d.color,el.parentElement.clientHeight||320),fill:true,tension:0.4,borderWidth:2,pointRadius:0,pointHoverRadius:5,pointHoverBackgroundColor:d.color,pointHoverBorderColor:'#1A1D27',pointHoverBorderWidth:3};});
         var ch=new Chart(ctx,{type:'line',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-            plugins:{legend:{display:false},tooltip:Object.assign({},ttStyle,{displayColors:true,boxWidth:8,boxHeight:8,callbacks:{label:function(c){return ' '+c.dataset.label+': $'+c.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2});}}})},
-            scales:{x:{ticks:{color:'#94A3B8',font:{family:'Inter',size:11},maxRotation:0,maxTicksLimit:8},grid:{color:'rgba(241,245,249,0.8)',drawBorder:false},border:{display:false}},
-                y:{ticks:{color:'#94A3B8',font:{family:'Fira Code',size:11},callback:function(v){return '$'+(v>=1000?(v/1000).toFixed(0)+'k':v);}},grid:{color:'rgba(241,245,249,0.8)',drawBorder:false},border:{display:false}}}}});
+            plugins:{legend:{display:false},tooltip:Object.assign({},ttStyle,{displayColors:true,boxWidth:8,boxHeight:8,callbacks:{label:function(c){return ' '+c.dataset.label+': $'+c.parsed.y.toLocaleString('en-US',{minimumFractionDigits:0});}}})},
+            scales:{x:{ticks:{color:'#475569',font:{family:'Inter',size:10},maxRotation:0,maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false}},
+                y:{ticks:{color:'#475569',font:{family:'Fira Code',size:10},callback:function(v){return '$'+(v>=1000?(v/1000).toFixed(0)+'k':v);}},grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},border:{display:false}}}}});
         charts.push(ch);
     }
 
     function donutChart(id,labels,values,colors) {
         var el=document.getElementById(id);if(!el)return;
-        var ch=new Chart(el,{type:'doughnut',data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderColor:'#FFF',borderWidth:4,hoverOffset:8}]},
-            options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:Object.assign({},ttStyle,{callbacks:{label:function(c){return ' $'+c.parsed.toLocaleString('en-US',{minimumFractionDigits:2});}}})}}});
+        var ch=new Chart(el,{type:'doughnut',data:{labels:labels,datasets:[{data:values,backgroundColor:colors,borderColor:'#1A1D27',borderWidth:3,hoverOffset:6}]},
+            options:{responsive:true,maintainAspectRatio:false,cutout:'75%',plugins:{legend:{display:false},tooltip:Object.assign({},ttStyle,{callbacks:{label:function(c){return ' $'+c.parsed.toLocaleString('en-US',{minimumFractionDigits:0});}}})}}});
         charts.push(ch);
     }
 
@@ -562,27 +455,29 @@
         var sd=dt.map(function(d){return new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});});
         var bd=v.channel_breakdown||{},cId='c-'+Date.now(),dId='d-'+Date.now();
 
-        ct.innerHTML = headlines(v.headline||[]) + pulse(v) + revenueBento(v.kpis) +
-            kpiGrid(v.kpis,'efficiency','Efficiency') + kpiGrid(v.kpis,'health','Health') +
-            '<div class="grid grid-cols-3 gap-4 chart-row"><div class="col-span-2 card">' +
-                '<div class="flex items-center justify-between mb-4"><h2 class="text-[15px] font-bold text-slate-900">Revenue by Channel</h2>' +
-                '<div class="flex items-center gap-5 text-xs">' +
-                    '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-purple-500 inline-block"></span><span class="text-slate-500 font-medium">Shopify</span></span>' +
-                    '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-blue-500 inline-block"></span><span class="text-slate-500 font-medium">Amazon US</span></span>' +
-                    '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-pink-500 inline-block"></span><span class="text-slate-500 font-medium">Amazon UK</span></span></div></div>' +
-                '<div class="relative h-80"><canvas id="'+cId+'"></canvas></div></div>' +
-            '<div class="card"><h2 class="text-[15px] font-bold text-slate-900 mb-4">Channel Split</h2>' +
-                '<div class="relative h-52 flex items-center justify-center"><canvas id="'+dId+'"></canvas>' +
-                    '<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-[10px] text-slate-400 font-mono uppercase tracking-widest">Total</span>' +
-                    '<span class="text-2xl font-extrabold font-mono text-slate-900">'+totalStr(bd)+'</span></div></div>' +
-                '<div class="mt-4 space-y-2">'+chLegend(v.channel_pct)+'</div></div></div>' +
-            '<div class="grid grid-cols-3 gap-4 products-row"><div class="col-span-2">'+prodTable(v.top_products,'Top 10 Products',true,false)+'</div>' +
-                '<div class="space-y-4">'+alerts(v.inventory_alerts,'Inventory Alerts')+campaigns(v.meta_campaigns)+'</div></div>' +
-            '<div class="grid grid-cols-3 gap-4 bottom-row"><div class="col-span-2">'+prodTable(v.bottom_products,'Bottom 10 Performers',true,false)+'</div>'+heatmap(v.daily_series)+'</div>' +
+        ct.innerHTML = headlines(v.headline||[]) + pulse(v) +
+            kpiSection(v.kpis,'revenue') + kpiSection(v.kpis,'efficiency') + kpiSection(v.kpis,'health') +
+
+            '<div class="chart-row"><div class="card">' +
+                '<div class="flex items-center justify-between mb-4"><span class="text-[14px] font-semibold text-white">Revenue by Channel</span>' +
+                '<div class="flex items-center gap-5 text-[11px]">' +
+                    '<span class="flex items-center gap-1.5"><span class="w-2.5 h-[2px] rounded-full inline-block" style="background:'+PURPLE+'"></span><span class="text-[#64748B]">Shopify</span></span>' +
+                    '<span class="flex items-center gap-1.5"><span class="w-2.5 h-[2px] rounded-full inline-block" style="background:'+BLUE+'"></span><span class="text-[#64748B]">Amazon US</span></span>' +
+                    '<span class="flex items-center gap-1.5"><span class="w-2.5 h-[2px] rounded-full inline-block" style="background:'+PINK+'"></span><span class="text-[#64748B]">Amazon UK</span></span></div></div>' +
+                '<div class="relative h-72"><canvas id="'+cId+'"></canvas></div></div>' +
+            '<div class="card"><span class="text-[14px] font-semibold text-white mb-4 block">Channel Split</span>' +
+                '<div class="relative h-44 flex items-center justify-center"><canvas id="'+dId+'"></canvas>' +
+                    '<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"><span class="text-[10px] text-[#475569] font-mono uppercase tracking-widest">Total</span>' +
+                    '<span class="text-xl font-bold font-mono text-white">'+totalStr(bd)+'</span></div></div>' +
+                '<div class="mt-4 space-y-1.5">'+chLegend(v.channel_pct)+'</div></div></div>' +
+
+            '<div class="products-row"><div>'+prodTable(v.top_products,'Top Products',true,false)+'</div>' +
+                '<div class="space-y-5">'+alerts(v.inventory_alerts,'Inventory Alerts')+campaigns(v.meta_campaigns)+'</div></div>' +
+            prodTable(v.bottom_products,'Bottom Performers',true,false) +
             sources();
 
-        if(dt.length>0) lineChart(cId,sd,[{label:'Shopify',data:dt.map(function(d){return sr[d].shopify||0;}),color:'#8B5CF6'},{label:'Amazon US',data:dt.map(function(d){return sr[d].amazon_us||0;}),color:'#2563EB'},{label:'Amazon UK',data:dt.map(function(d){return sr[d].amazon_uk||0;}),color:'#EC4899'}]);
-        if(Object.keys(bd).length>0) donutChart(dId,Object.keys(bd),Object.values(bd),['#8B5CF6','#2563EB','#EC4899']);
+        if(dt.length>0) lineChart(cId,sd,[{label:'Shopify',data:dt.map(function(d){return sr[d].shopify||0;}),color:PURPLE},{label:'Amazon US',data:dt.map(function(d){return sr[d].amazon_us||0;}),color:BLUE},{label:'Amazon UK',data:dt.map(function(d){return sr[d].amazon_uk||0;}),color:PINK}]);
+        if(Object.keys(bd).length>0) donutChart(dId,Object.keys(bd),Object.values(bd),[PURPLE,BLUE,PINK]);
     }
 
     // ═══ RENDER: Channel ═══
@@ -592,10 +487,10 @@
         var cId='ch-'+Date.now(),groups=[],seen={};
         (v.kpis||[]).forEach(function(k){if(k.group&&!seen[k.group]){seen[k.group]=true;groups.push(k.group);}});
         var html=headlines(v.headline||[]);
-        groups.forEach(function(g){html+=kpiGrid(v.kpis,g,g.charAt(0).toUpperCase()+g.slice(1));});
-        html+='<div class="card"><div class="flex items-center justify-between mb-4"><h2 class="text-[15px] font-bold text-slate-900">Daily Revenue</h2></div><div class="relative h-80"><canvas id="'+cId+'"></canvas></div></div>';
+        groups.forEach(function(g){html+=kpiSection(v.kpis,g);});
+        html+='<div class="card"><div class="flex items-center justify-between mb-4"><span class="text-[14px] font-semibold text-white">Daily Revenue</span></div><div class="relative h-72"><canvas id="'+cId+'"></canvas></div></div>';
         var bsr=!!(v.top_products&&v.top_products[0]&&v.top_products[0].bsr);
-        html+='<div class="grid grid-cols-3 gap-4 products-row"><div class="col-span-2">'+prodTable(v.top_products,name+' Top Products',false,bsr)+'</div><div>'+alerts(v.inventory_alerts,name+' Inventory')+'</div></div>';
+        html+='<div class="products-row"><div>'+prodTable(v.top_products,name+' Top Products',false,bsr)+'</div><div>'+alerts(v.inventory_alerts,name+' Inventory')+'</div></div>';
         if(v.bottom_products&&v.bottom_products.length>0) html+=prodTable(v.bottom_products,name+' Bottom Performers',false,bsr);
         html+=sources();ct.innerHTML=html;
         if(dt.length>0) lineChart(cId,sd,[{label:'Revenue',data:dt.map(function(d){return(sr[d]||{}).revenue||0;}),color:color}]);
@@ -608,12 +503,12 @@
         var cId='sh-'+Date.now(),groups=[],seen={};
         (v.kpis||[]).forEach(function(k){if(k.group&&!seen[k.group]){seen[k.group]=true;groups.push(k.group);}});
         var html=headlines(v.headline||[]);
-        groups.forEach(function(g){html+=kpiGrid(v.kpis,g,g.charAt(0).toUpperCase()+g.slice(1));});
-        html+='<div class="card"><div class="flex items-center justify-between mb-4"><h2 class="text-[15px] font-bold text-slate-900">Daily Revenue</h2></div><div class="relative h-80"><canvas id="'+cId+'"></canvas></div></div>';
-        html+='<div class="grid grid-cols-3 gap-4 products-row"><div class="col-span-2">'+prodTable(v.top_products,'Shopify Products',false,false)+'</div><div class="space-y-4">'+alerts(v.inventory_alerts,'Shopify Inventory')+campaigns(v.meta_campaigns)+'</div></div>';
+        groups.forEach(function(g){html+=kpiSection(v.kpis,g);});
+        html+='<div class="card"><div class="flex items-center justify-between mb-4"><span class="text-[14px] font-semibold text-white">Daily Revenue</span></div><div class="relative h-72"><canvas id="'+cId+'"></canvas></div></div>';
+        html+='<div class="products-row"><div>'+prodTable(v.top_products,'Shopify Products',false,false)+'</div><div class="space-y-5">'+alerts(v.inventory_alerts,'Shopify Inventory')+campaigns(v.meta_campaigns)+'</div></div>';
         if(v.bottom_products&&v.bottom_products.length>0) html+=prodTable(v.bottom_products,'Shopify Bottom Performers',false,false);
         html+=landingPages(v.top_landing_pages)+sources();ct.innerHTML=html;
-        if(dt.length>0) lineChart(cId,sd,[{label:'Revenue',data:dt.map(function(d){return(sr[d]||{}).revenue||0;}),color:'#8B5CF6'}]);
+        if(dt.length>0) lineChart(cId,sd,[{label:'Revenue',data:dt.map(function(d){return(sr[d]||{}).revenue||0;}),color:PURPLE}]);
     }
 
     // ═══ Tab Switch ═══
@@ -621,16 +516,16 @@
         activeTab=tab;destroyCharts();
         document.querySelectorAll('.channel-tab').forEach(function(b){b.dataset.tab===tab?b.classList.add('tab-active'):b.classList.remove('tab-active');});
         var v=D.views?D.views[tab]:null;
-        if(!v){document.getElementById('dashboard-content').innerHTML='<p class="text-slate-400 text-center py-20 text-sm">No data for this view.</p>';return;}
+        if(!v){document.getElementById('dashboard-content').innerHTML='<p class="text-[#64748B] text-center py-20 text-sm">No data for this view.</p>';return;}
         document.getElementById('dashboard-content').innerHTML=skeleton();
         setTimeout(function(){
-            switch(tab){case 'overview':renderOverview(v);break;case 'amazon_us':renderChannel(v,'Amazon US','#2563EB');break;case 'amazon_uk':renderChannel(v,'Amazon UK','#EC4899');break;case 'shopify':renderShopify(v);break;}
+            switch(tab){case 'overview':renderOverview(v);break;case 'amazon_us':renderChannel(v,'Amazon US',BLUE);break;case 'amazon_uk':renderChannel(v,'Amazon UK',PINK);break;case 'shopify':renderShopify(v);break;}
         },80);
     }
 
     // ═══ Init ═══
     if(D.generated_at){var end=new Date(D.generated_at),start=new Date(end);start.setDate(start.getDate()-(D.period_days||30));var o={month:'short',day:'numeric'};var el=document.getElementById('date-range');if(el)el.textContent=start.toLocaleDateString('en-US',o)+' \u2013 '+end.toLocaleDateString('en-US',o);}
-    var sel=document.getElementById('period-selector');['7D','30D','90D'].forEach(function(l){var a=l===D.period_days+'D',b=document.createElement('button');b.textContent=l;b.className='px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all '+(a?'period-active':'text-slate-500 hover:text-slate-700');sel.appendChild(b);});
+    var sel=document.getElementById('period-selector');['7D','30D','90D'].forEach(function(l){var a=l===D.period_days+'D',b=document.createElement('button');b.textContent=l;b.className='px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all '+(a?'bg-purple-500/20 text-purple-300':'text-[#64748B] hover:text-[#94A3B8]');sel.appendChild(b);});
     document.getElementById('export-btn').addEventListener('click',function(){window.print();});
     document.querySelectorAll('.channel-tab').forEach(function(b){b.addEventListener('click',function(){switchTab(b.dataset.tab);});});
     switchTab('overview');
