@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Fira Sans', 'system-ui', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    },
+                    colors: {
+                        surface: { DEFAULT: '#121212', dark: '#000000', light: '#1a1a2e', card: '#141422' },
+                        accent: { purple: '#8b5cf6', cyan: '#06b6d4', pink: '#ec4899', amber: '#f59e0b' },
+                        status: { green: '#22C55E', yellow: '#F59E0B', red: '#EF4444' },
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background: #000000;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139, 92, 246, 0.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6, 182, 212, 0.04), transparent);
+        }
+
+        /* Glass cards */
+        .glass {
+            background: rgba(20, 20, 34, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            transition: border-color 0.2s ease;
+        }
+        .glass:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* KPI cards */
+        .kpi-card {
+            background: linear-gradient(145deg, rgba(20, 20, 34, 0.8), rgba(26, 26, 46, 0.4));
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            cursor: default;
+        }
+        .kpi-card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.05);
+        }
+        .kpi-card.highlight {
+            border-color: rgba(139, 92, 246, 0.2);
+            background: linear-gradient(145deg, rgba(139, 92, 246, 0.06), rgba(20, 20, 34, 0.8));
+        }
+        .kpi-card.highlight:hover {
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 0 0 24px rgba(139, 92, 246, 0.08);
+        }
+
+        /* Status border indicators */
+        .status-good { border-left: 3px solid #22C55E; }
+        .status-warn { border-left: 3px solid #F59E0B; }
+        .status-bad { border-left: 3px solid #EF4444; }
+
+        /* Period selector */
+        .period-btn { transition: all 0.15s ease; cursor: pointer; }
+        .period-btn.active {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+        }
+
+        /* Shimmer loading */
+        .shimmer {
+            background: linear-gradient(90deg, transparent 0%, rgba(139,92,246,0.03) 50%, transparent 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* Pulse dot */
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .pulse-dot { animation: pulse-dot 2s infinite; }
+
+        /* Count-up animation */
+        @keyframes countFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .count-in { animation: countFadeIn 0.4s ease-out; }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            .shimmer, .pulse-dot { animation: none; }
+            .count-in { animation: none; }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.3); }
+
+        /* Table rows */
+        .product-table tr { transition: background 0.15s ease; }
+        .product-table tr:hover { background: rgba(139, 92, 246, 0.04); }
+
+        /* Responsive KPI grid */
+        @media (max-width: 1024px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+        }
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .chart-row { grid-template-columns: 1fr !important; }
+            .bottom-row { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 375px) {
+            .kpi-grid { grid-template-columns: 1fr !important; }
+        }
+    </style>
+</head>
+
+<body class="font-sans text-slate-200 min-h-screen antialiased">
+
+<div x-data="dashboard()" x-init="init()">
+
+    <!-- Header -->
+    <header class="sticky top-0 z-50 border-b border-white/5" style="background: rgba(0,0,0,0.9); backdrop-filter: blur(16px);">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-accent-purple to-accent-cyan flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold tracking-wide text-white">HERMES</h1>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-[0.2em]">WEEB WORKSHOP</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4 sm:gap-6">
+                <!-- Period selector -->
+                <div class="flex bg-white/[0.03] rounded-lg p-0.5 border border-white/5">
+                    <template x-for="p in periods" :key="p.days">
+                        <button
+                            @click="setPeriod(p.days)"
+                            :class="days === p.days ? 'active' : 'text-slate-500 hover:text-slate-300'"
+                            class="period-btn px-3 py-1.5 text-xs font-medium rounded-md"
+                            x-text="p.label">
+                        </button>
+                    </template>
+                </div>
+
+                <!-- Refresh -->
+                <button @click="refresh()" class="text-slate-500 hover:text-accent-purple transition-colors cursor-pointer" aria-label="Refresh data">
+                    <svg :class="loading && 'animate-spin'" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+
+                <!-- Status indicator -->
+                <div class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full" :class="loading ? 'bg-amber-400 pulse-dot' : 'bg-emerald-400'"></div>
+                    <span class="text-[11px] text-slate-500 font-mono" x-text="loading ? 'SYNCING' : 'LIVE'"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main -->
+    <main class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
+
+        <!-- Loading skeleton -->
+        <template x-if="loading && !data">
+            <div class="space-y-5">
+                <div class="grid grid-cols-5 gap-3 kpi-grid">
+                    <template x-for="i in 15" :key="i">
+                        <div class="kpi-card p-4 h-[88px] shimmer"></div>
+                    </template>
+                </div>
+                <div class="grid grid-cols-3 gap-4 chart-row">
+                    <div class="col-span-2 glass h-72 shimmer"></div>
+                    <div class="glass h-72 shimmer"></div>
+                </div>
+            </div>
+        </template>
+
+        <!-- Data loaded -->
+        <template x-if="data">
+            <div class="space-y-5">
+
+                <!-- KPI Row 1: Revenue -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <svg class="w-3.5 h-3.5 text-accent-purple" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <p class="text-[11px] font-mono text-slate-500 tracking-[0.15em] uppercase">Revenue</p>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3 kpi-grid">
+                        <template x-for="kpi in getKpiGroup('revenue')" :key="kpi.key">
+                            <div class="kpi-card p-4" :class="kpi.key === 'net_revenue' && 'highlight'">
+                                <p class="text-[11px] text-slate-500 mb-1.5 font-medium" x-text="kpi.label"></p>
+                                <p class="text-2xl font-semibold font-mono tracking-tight count-in"
+                                   :class="getValueColor(kpi)"
+                                   x-text="formatKpi(kpi)"></p>
+                                <p class="text-[10px] mt-1 font-mono" x-show="kpi.change !== undefined"
+                                   :class="kpi.change >= 0 ? 'text-emerald-400' : 'text-red-400'"
+                                   x-text="(kpi.change >= 0 ? '+' : '') + kpi.change + '%'"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- KPI Row 2: Efficiency -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <svg class="w-3.5 h-3.5 text-accent-cyan" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                        </svg>
+                        <p class="text-[11px] font-mono text-slate-500 tracking-[0.15em] uppercase">Efficiency</p>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3 kpi-grid">
+                        <template x-for="kpi in getKpiGroup('efficiency')" :key="kpi.key">
+                            <div class="kpi-card p-4">
+                                <p class="text-[11px] text-slate-500 mb-1.5 font-medium" x-text="kpi.label"></p>
+                                <p class="text-2xl font-semibold font-mono tracking-tight count-in"
+                                   :class="getValueColor(kpi)"
+                                   x-text="formatKpi(kpi)"></p>
+                                <p class="text-[10px] mt-1 font-mono" x-show="kpi.change !== undefined"
+                                   :class="kpi.change >= 0 ? 'text-emerald-400' : 'text-red-400'"
+                                   x-text="(kpi.change >= 0 ? '+' : '') + kpi.change + '%'"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- KPI Row 3: Health -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2.5">
+                        <svg class="w-3.5 h-3.5 text-accent-pink" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/>
+                        </svg>
+                        <p class="text-[11px] font-mono text-slate-500 tracking-[0.15em] uppercase">Health</p>
+                    </div>
+                    <div class="grid grid-cols-5 gap-3 kpi-grid">
+                        <template x-for="kpi in getKpiGroup('health')" :key="kpi.key">
+                            <div class="kpi-card p-4">
+                                <p class="text-[11px] text-slate-500 mb-1.5 font-medium" x-text="kpi.label"></p>
+                                <p class="text-2xl font-semibold font-mono tracking-tight count-in"
+                                   :class="getValueColor(kpi)"
+                                   x-text="formatKpi(kpi)"></p>
+                                <p class="text-[10px] text-slate-600 mt-1" x-show="kpi.detail" x-text="kpi.detail"></p>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-3 gap-4 chart-row">
+
+                    <!-- Revenue Trend Line Chart -->
+                    <div class="col-span-2 glass p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-sm font-semibold text-slate-200">Revenue by Channel</h2>
+                            <div class="flex items-center gap-5 text-[11px]">
+                                <span class="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+                                    <span class="w-3 h-[3px] rounded-full bg-accent-purple inline-block"></span>
+                                    <span class="text-slate-400">Shopify</span>
+                                </span>
+                                <span class="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+                                    <span class="w-3 h-[3px] rounded-full bg-accent-cyan inline-block"></span>
+                                    <span class="text-slate-400">Amazon US</span>
+                                </span>
+                                <span class="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity">
+                                    <span class="w-3 h-[3px] rounded-full bg-accent-pink inline-block"></span>
+                                    <span class="text-slate-400">Amazon UK</span>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="relative h-60">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Channel Split Donut -->
+                    <div class="glass p-5">
+                        <h2 class="text-sm font-semibold text-slate-200 mb-4">Channel Split</h2>
+                        <div class="relative h-48 flex items-center justify-center">
+                            <canvas id="channelChart"></canvas>
+                            <!-- Center label -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-[10px] text-slate-500 font-mono">TOTAL</span>
+                                <span class="text-lg font-bold font-mono text-white" x-text="'$' + getTotalRevenue()"></span>
+                            </div>
+                        </div>
+                        <div class="mt-4 space-y-2.5">
+                            <template x-for="(pct, channel) in data.channel_pct" :key="channel">
+                                <div class="flex items-center justify-between text-xs group cursor-default">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full transition-transform group-hover:scale-125"
+                                              :class="channel === 'Shopify' ? 'bg-accent-purple' : channel === 'Amazon US' ? 'bg-accent-cyan' : 'bg-accent-pink'"></span>
+                                        <span class="text-slate-400 group-hover:text-slate-200 transition-colors" x-text="channel"></span>
+                                    </div>
+                                    <span class="font-mono text-slate-300" x-text="pct + '%'"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Products + Alerts -->
+                <div class="grid grid-cols-3 gap-4 bottom-row">
+
+                    <!-- Top Products Table -->
+                    <div class="col-span-2 glass p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-sm font-semibold text-slate-200">Product Rankings</h2>
+                            <span class="text-[10px] font-mono text-slate-500 bg-white/[0.03] px-2 py-1 rounded" x-text="days + ' days'"></span>
+                        </div>
+                        <div class="overflow-hidden">
+                            <table class="w-full product-table">
+                                <thead>
+                                    <tr class="text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-white/5">
+                                        <th class="text-left pb-3 pl-3 w-8">#</th>
+                                        <th class="text-left pb-3">Product</th>
+                                        <th class="text-left pb-3">Channel</th>
+                                        <th class="text-right pb-3">Revenue</th>
+                                        <th class="text-right pb-3 pr-3">Units</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(prod, i) in getProducts()" :key="i">
+                                        <tr class="border-b border-white/[0.03] cursor-default">
+                                            <td class="py-3 pl-3 text-xs font-mono" :class="i < 3 ? 'text-accent-purple' : 'text-slate-600'" x-text="i + 1"></td>
+                                            <td class="py-3 text-sm text-slate-300 max-w-[280px] truncate" x-text="prod.name"></td>
+                                            <td class="py-3">
+                                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                                                      :class="prod.channel === 'Shopify' ? 'bg-accent-purple/10 text-purple-400' : prod.channel === 'Amazon US' ? 'bg-accent-cyan/10 text-cyan-400' : 'bg-accent-pink/10 text-pink-400'"
+                                                      x-text="prod.channel || 'Shopify'"></span>
+                                            </td>
+                                            <td class="py-3 text-sm font-mono text-right text-slate-200" x-text="'$' + Number(prod.revenue).toLocaleString('en-US', {minimumFractionDigits: 2})"></td>
+                                            <td class="py-3 text-sm font-mono text-right pr-3 text-slate-500" x-text="prod.units"></td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="getProducts().length === 0">
+                                        <tr><td colspan="5" class="py-10 text-center text-sm text-slate-600">No product data for this period</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Right column: Alerts + Meta -->
+                    <div class="space-y-4">
+                        <!-- Inventory Alerts -->
+                        <div class="glass p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <h2 class="text-sm font-semibold text-slate-200">Inventory Alerts</h2>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                                      :class="(data.inventory_alerts || []).length > 0 ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'"
+                                      x-text="(data.inventory_alerts || []).length > 0 ? (data.inventory_alerts || []).length + ' alerts' : 'All clear'"></span>
+                            </div>
+                            <div class="space-y-2 max-h-44 overflow-y-auto">
+                                <template x-for="(alert, i) in data.inventory_alerts" :key="i">
+                                    <div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs cursor-default"
+                                         :class="alert.severity === 'critical' ? 'status-bad' : 'status-warn'">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-slate-300 truncate max-w-[170px] font-medium"
+                                                  x-text="alert.product || alert.name || alert.sku"></span>
+                                            <span class="text-[10px] font-mono font-semibold"
+                                                  :class="alert.severity === 'critical' ? 'text-red-400' : 'text-amber-400'"
+                                                  x-text="alert.severity === 'critical' ? 'OUT OF STOCK' : (alert.inventory || alert.fulfillable) + ' left'"></span>
+                                        </div>
+                                        <p class="text-[10px] text-slate-600 mt-0.5" x-text="alert.source"></p>
+                                    </div>
+                                </template>
+                                <template x-if="!data.inventory_alerts || data.inventory_alerts.length === 0">
+                                    <div class="flex flex-col items-center py-6 text-slate-600">
+                                        <svg class="w-6 h-6 mb-2 text-emerald-500/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                        <p class="text-xs">All stock levels healthy</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Active Meta Campaigns -->
+                        <div class="glass p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <h2 class="text-sm font-semibold text-slate-200">Meta Campaigns</h2>
+                                <span class="text-[10px] font-mono text-slate-500"
+                                      x-text="(data.meta_campaigns || []).filter(c => c.spend > 0).length + ' active'"></span>
+                            </div>
+                            <div class="space-y-2 max-h-44 overflow-y-auto">
+                                <template x-for="(camp, i) in (data.meta_campaigns || []).filter(c => c.spend > 0).slice(0, 5)" :key="i">
+                                    <div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs cursor-default hover:bg-white/[0.04] transition-colors">
+                                        <p class="text-slate-300 truncate font-medium" x-text="camp.name"></p>
+                                        <div class="flex items-center gap-3 mt-1.5 text-[10px] font-mono text-slate-500">
+                                            <span x-text="'$' + camp.spend.toFixed(2)"></span>
+                                            <span :class="camp.roas >= 2 ? 'text-emerald-400' : camp.roas > 0 ? 'text-amber-400' : 'text-slate-600'"
+                                                  x-text="camp.roas > 0 ? camp.roas.toFixed(1) + 'x ROAS' : 'No sales'"></span>
+                                            <span x-text="camp.purchases + ' sales'"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="!data.meta_campaigns || data.meta_campaigns.filter(c => c.spend > 0).length === 0">
+                                    <div class="flex flex-col items-center py-6 text-slate-600">
+                                        <svg class="w-6 h-6 mb-2 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3l1.664 1.664M21 21l-1.5-1.5m-5.533-1.467a5.25 5.25 0 01-7.533-7.533m12.066 12.066A11.95 11.95 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18c0-1.065.274-2.066.756-2.937"/>
+                                        </svg>
+                                        <p class="text-xs">No active campaigns</p>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer: Data Sources -->
+                <div class="flex items-center justify-center gap-6 py-4 border-t border-white/[0.03]">
+                    <template x-for="(ok, source) in data.sources" :key="source">
+                        <div class="flex items-center gap-1.5 cursor-default">
+                            <div class="w-1.5 h-1.5 rounded-full" :class="ok ? 'bg-emerald-400' : 'bg-red-400'"></div>
+                            <span class="text-[10px] font-mono text-slate-600 uppercase tracking-wide" x-text="source"></span>
+                        </div>
+                    </template>
+                    <span class="text-[10px] text-slate-700 font-mono" x-text="'Updated ' + formatTime(data.generated_at)"></span>
+                </div>
+
+            </div>
+        </template>
+
+        <!-- Error state -->
+        <template x-if="error">
+            <div class="glass p-10 text-center max-w-md mx-auto mt-20">
+                <svg class="w-10 h-10 mx-auto mb-4 text-red-400/50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+                </svg>
+                <p class="text-red-400 text-sm font-medium mb-2">Connection lost</p>
+                <p class="text-slate-600 text-xs mb-6" x-text="error"></p>
+                <button @click="fetchData()" class="px-5 py-2 bg-accent-purple/15 text-purple-400 rounded-lg text-xs font-medium hover:bg-accent-purple/25 transition-colors cursor-pointer">
+                    Retry
+                </button>
+            </div>
+        </template>
+
+    </main>
+</div>
+
+<script>
+function dashboard() {
+    return {
+        days: 30,
+        loading: true,
+        data: null,
+        error: null,
+        revenueChart: null,
+        channelChart: null,
+        periods: [
+            { label: '7D', days: 7 },
+            { label: '30D', days: 30 },
+            { label: '90D', days: 90 },
+            { label: '6M', days: 180 },
+        ],
+
+        async init() {
+            if (window.__HERMES_DATA__) {
+                this.data = window.__HERMES_DATA__;
+                this.loading = false;
+                this.$nextTick(() => this.renderCharts());
+                return;
+            }
+            await this.fetchData();
+        },
+
+        async fetchData() {
+            this.loading = true;
+            this.error = null;
+            try {
+                const res = await fetch(`/api/kpis?days=${this.days}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                this.data = await res.json();
+                this.$nextTick(() => this.renderCharts());
+            } catch (e) {
+                this.error = e.message;
+            }
+            this.loading = false;
+        },
+
+        setPeriod(d) {
+            this.days = d;
+            if (window.__HERMES_DATA__) return; // static mode, can't change period
+            this.fetchData();
+        },
+
+        refresh() {
+            if (window.__HERMES_DATA__) { location.reload(); return; }
+            fetch('/api/cache/clear').then(() => this.fetchData());
+        },
+
+        getKpiGroup(group) {
+            return (this.data?.kpis || []).filter(k => k.group === group);
+        },
+
+        getProducts() {
+            // Merge shopify + amazon products if available
+            const shopify = (this.data?.top_products_shopify || []).map(p => ({...p, channel: 'Shopify'}));
+            const amazonUs = (this.data?.top_products_amazon_us || []).map(p => ({...p, channel: 'Amazon US'}));
+            const amazonUk = (this.data?.top_products_amazon_uk || []).map(p => ({...p, channel: 'Amazon UK'}));
+            const all = [...shopify, ...amazonUs, ...amazonUk];
+            all.sort((a, b) => Number(b.revenue) - Number(a.revenue));
+            return all.length > 0 ? all.slice(0, 10) : shopify.slice(0, 10);
+        },
+
+        getTotalRevenue() {
+            const bd = this.data?.channel_breakdown || {};
+            const total = Object.values(bd).reduce((s, v) => s + v, 0);
+            return total >= 1000 ? (total / 1000).toFixed(1) + 'k' : total.toFixed(0);
+        },
+
+        getValueColor(kpi) {
+            const v = kpi.value;
+            if (v === null || v === undefined) return 'text-slate-400';
+
+            // Traffic light logic for specific KPIs
+            if (kpi.key === 'meta_roas') {
+                if (v >= 2) return 'text-emerald-400';
+                if (v > 0) return 'text-amber-400';
+                return 'text-slate-400';
+            }
+            if (kpi.key === 'meta_cpa' || kpi.key === 'cac') {
+                if (v > 30) return 'text-red-400';
+                if (v > 20) return 'text-amber-400';
+                return 'text-emerald-400';
+            }
+            if (kpi.key === 'gross_margin') {
+                if (v >= 50) return 'text-emerald-400';
+                if (v >= 40) return 'text-slate-200';
+                return 'text-red-400';
+            }
+            if (kpi.key === 'inventory_alerts') {
+                return v > 0 ? 'text-red-400' : 'text-emerald-400';
+            }
+            if (kpi.key === 'returning_pct') {
+                if (v >= 25) return 'text-emerald-400';
+                if (v >= 15) return 'text-amber-400';
+                return 'text-red-400';
+            }
+            return 'text-white';
+        },
+
+        formatKpi(kpi) {
+            const v = kpi.value;
+            if (v === null || v === undefined) return '\u2014';
+
+            switch (kpi.format) {
+                case 'currency':
+                    if (v >= 10000) return '$' + (v / 1000).toFixed(1) + 'k';
+                    return '$' + Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                case 'currency_gbp':
+                    if (v >= 10000) return '\u00A3' + (v / 1000).toFixed(1) + 'k';
+                    return '\u00A3' + Number(v).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                case 'multiplier':
+                    return Number(v).toFixed(2) + 'x';
+                case 'percent':
+                    return Number(v).toFixed(1) + '%';
+                case 'number':
+                    return Number(v).toLocaleString();
+                default:
+                    return String(v);
+            }
+        },
+
+        formatTime(ts) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' +
+                   d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        },
+
+        renderCharts() {
+            this.renderRevenueChart();
+            this.renderChannelChart();
+        },
+
+        renderRevenueChart() {
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+            if (this.revenueChart) this.revenueChart.destroy();
+
+            const series = this.data?.daily_series || {};
+            const dates = Object.keys(series).sort();
+            const shopifyData = dates.map(d => series[d]?.shopify || 0);
+            const amazonUsData = dates.map(d => series[d]?.amazon_us || 0);
+            const amazonUkData = dates.map(d => series[d]?.amazon_uk || 0);
+
+            const shortDates = dates.map(d => {
+                const dt = new Date(d + 'T00:00:00');
+                return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            });
+
+            const makeDataset = (label, data, color, fillAlpha) => ({
+                label,
+                data,
+                borderColor: color,
+                backgroundColor: color.replace(')', `, ${fillAlpha})`).replace('rgb', 'rgba'),
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: color,
+                pointHoverBorderColor: '#000',
+                pointHoverBorderWidth: 2,
+            });
+
+            this.revenueChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: shortDates,
+                    datasets: [
+                        makeDataset('Shopify', shopifyData, '#8b5cf6', 0.08),
+                        makeDataset('Amazon US', amazonUsData, '#06b6d4', 0.06),
+                        makeDataset('Amazon UK', amazonUkData, '#ec4899', 0.05),
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            borderColor: 'rgba(139, 92, 246, 0.2)',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: '#94a3b8',
+                            titleFont: { family: 'Fira Sans', size: 12, weight: 600 },
+                            bodyFont: { family: 'Fira Code', size: 11 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            boxWidth: 8,
+                            boxHeight: 8,
+                            boxPadding: 4,
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('en-US', {minimumFractionDigits: 2})}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#334155', font: { family: 'Fira Sans', size: 10 }, maxRotation: 0, maxTicksLimit: 8 },
+                            grid: { color: 'rgba(255,255,255,0.02)', drawBorder: false },
+                            border: { display: false },
+                        },
+                        y: {
+                            ticks: {
+                                color: '#334155',
+                                font: { family: 'Fira Code', size: 10 },
+                                callback: v => '$' + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v),
+                            },
+                            grid: { color: 'rgba(255,255,255,0.02)', drawBorder: false },
+                            border: { display: false },
+                        },
+                    },
+                }
+            });
+        },
+
+        renderChannelChart() {
+            const ctx = document.getElementById('channelChart');
+            if (!ctx) return;
+            if (this.channelChart) this.channelChart.destroy();
+
+            const breakdown = this.data?.channel_breakdown || {};
+            const labels = Object.keys(breakdown);
+            const values = Object.values(breakdown);
+
+            this.channelChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: ['#8b5cf6', '#06b6d4', '#ec4899'],
+                        borderColor: '#000000',
+                        borderWidth: 3,
+                        hoverOffset: 8,
+                        hoverBorderColor: '#1a1a2e',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            borderColor: 'rgba(139, 92, 246, 0.2)',
+                            borderWidth: 1,
+                            titleColor: '#fff',
+                            bodyColor: '#94a3b8',
+                            titleFont: { family: 'Fira Sans', size: 12, weight: 600 },
+                            bodyFont: { family: 'Fira Code', size: 11 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: ctx => ` $${ctx.parsed.toLocaleString('en-US', {minimumFractionDigits: 2})}`
+                            }
+                        }
+                    },
+                },
+            });
+        },
+    };
+}
+</script>
+
+<script>window.__HERMES_DATA__ = {"kpis": [{"key": "net_revenue", "label": "Net Revenue", "value": 42850.0, "format": "currency", "group": "revenue"}, {"key": "shopify_revenue", "label": "Shopify", "value": 3240.5, "format": "currency", "group": "revenue"}, {"key": "amazon_us_revenue", "label": "Amazon US", "value": 31200.0, "format": "currency", "group": "revenue"}, {"key": "amazon_uk_revenue", "label": "Amazon UK", "value": 8409.5, "format": "currency_gbp", "group": "revenue"}, {"key": "total_orders", "label": "Total Orders", "value": 1847, "format": "number", "group": "revenue"}, {"key": "blended_aov", "label": "Blended AOV", "value": 23.19, "format": "currency", "group": "efficiency"}, {"key": "meta_roas", "label": "Meta ROAS", "value": 2.34, "format": "multiplier", "group": "efficiency"}, {"key": "meta_cpa", "label": "Meta CPA", "value": 8.72, "format": "currency", "group": "efficiency"}, {"key": "blended_cac", "label": "Blended CAC", "value": 12.5, "format": "currency", "group": "efficiency"}, {"key": "meta_spend", "label": "Ad Spend", "value": 1450.0, "format": "currency", "group": "efficiency"}, {"key": "gross_margin", "label": "Gross Margin", "value": 52.3, "format": "percent", "group": "health"}, {"key": "cash_position", "label": "Cash Position", "value": 18420.0, "format": "currency_gbp", "group": "health"}, {"key": "email_list_size", "label": "Email List", "value": 4280, "format": "number", "group": "health"}, {"key": "returning_pct", "label": "Returning %", "value": 14.2, "format": "percent", "group": "health"}, {"key": "inventory_alerts", "label": "Stock Alerts", "value": 5, "format": "number", "group": "health", "detail": "2 OOS, 3 low"}], "channel_breakdown": {"Shopify": 3240.5, "Amazon US": 31200.0, "Amazon UK": 8409.5}, "channel_pct": {"Shopify": 7.6, "Amazon US": 72.8, "Amazon UK": 19.6}, "daily_series": {"2026-02-13": {"shopify": 289.17, "amazon_us": 1873.13, "amazon_uk": 389.59}, "2026-02-14": {"shopify": 67.01, "amazon_us": 1340.0, "amazon_uk": 593.77}, "2026-02-15": {"shopify": 236.96, "amazon_us": 1229.74, "amazon_uk": 574.38}, "2026-02-16": {"shopify": 254.1, "amazon_us": 1349.72, "amazon_uk": 464.48}, "2026-02-17": {"shopify": 127.82, "amazon_us": 1439.82, "amazon_uk": 518.13}, "2026-02-18": {"shopify": 348.1, "amazon_us": 1040.73, "amazon_uk": 376.36}, "2026-02-19": {"shopify": 59.08, "amazon_us": 1950.98, "amazon_uk": 594.08}, "2026-02-20": {"shopify": 155.22, "amazon_us": 1870.71, "amazon_uk": 300.35}, "2026-02-21": {"shopify": 297.13, "amazon_us": 1375.57, "amazon_uk": 499.25}, "2026-02-22": {"shopify": 376.73, "amazon_us": 1016.35, "amazon_uk": 374.96}, "2026-02-23": {"shopify": 254.37, "amazon_us": 2199.99, "amazon_uk": 509.82}, "2026-02-24": {"shopify": 376.26, "amazon_us": 1896.28, "amazon_uk": 348.04}, "2026-02-25": {"shopify": 216.25, "amazon_us": 2086.83, "amazon_uk": 270.2}, "2026-02-26": {"shopify": 84.69, "amazon_us": 1936.64, "amazon_uk": 495.4}, "2026-02-27": {"shopify": 185.3, "amazon_us": 1813.24, "amazon_uk": 562.91}, "2026-02-28": {"shopify": 272.32, "amazon_us": 2041.6, "amazon_uk": 419.52}, "2026-03-01": {"shopify": 80.63, "amazon_us": 1773.51, "amazon_uk": 487.61}, "2026-03-02": {"shopify": 293.95, "amazon_us": 1059.51, "amazon_uk": 566.11}, "2026-03-03": {"shopify": 307.77, "amazon_us": 1393.3, "amazon_uk": 389.21}, "2026-03-04": {"shopify": 282.42, "amazon_us": 1782.74, "amazon_uk": 583.49}, "2026-03-05": {"shopify": 334.42, "amazon_us": 1855.35, "amazon_uk": 320.94}, "2026-03-06": {"shopify": 126.85, "amazon_us": 2124.92, "amazon_uk": 499.92}, "2026-03-07": {"shopify": 223.45, "amazon_us": 1199.17, "amazon_uk": 580.16}, "2026-03-08": {"shopify": 245.24, "amazon_us": 888.34, "amazon_uk": 444.16}, "2026-03-09": {"shopify": 122.1, "amazon_us": 911.79, "amazon_uk": 303.56}, "2026-03-10": {"shopify": 369.81, "amazon_us": 1360.33, "amazon_uk": 211.22}, "2026-03-11": {"shopify": 336.84, "amazon_us": 1231.65, "amazon_uk": 482.18}, "2026-03-12": {"shopify": 162.44, "amazon_us": 1371.14, "amazon_uk": 308.68}, "2026-03-13": {"shopify": 181.13, "amazon_us": 1811.62, "amazon_uk": 207.3}, "2026-03-14": {"shopify": 333.19, "amazon_us": 1872.83, "amazon_uk": 305.49}}, "top_products_shopify": [{"name": "One Piece Straw Hat Bundle (3-Pack)", "revenue": 1240.0, "units": 62}, {"name": "Demon Slayer Tanjiro Metal Keychain", "revenue": 890.0, "units": 45}, {"name": "JJK Gojo Premium Keychain", "revenue": 720.0, "units": 36}, {"name": "Attack on Titan Scout Regiment Set", "revenue": 540.0, "units": 18}, {"name": "Naruto Akatsuki Cloud Keychain", "revenue": 380.0, "units": 22}], "meta_campaigns": [{"name": "UK - Broad - Anime Keychains", "spend": 420.0, "roas": 2.8, "purchases": 34, "status": "ACTIVE"}, {"name": "UK - LAL - Purchasers", "spend": 310.0, "roas": 3.1, "purchases": 28, "status": "ACTIVE"}, {"name": "US - Testing - New Creatives", "spend": 180.0, "roas": 1.2, "purchases": 8, "status": "ACTIVE"}], "inventory_alerts": [{"source": "Amazon US", "severity": "critical", "name": "OP-KC-001 Luffy", "sku": "OP-KC-001"}, {"source": "Amazon UK", "severity": "critical", "name": "DS-KC-003 Tanjiro", "sku": "DS-KC-003"}, {"source": "Shopify", "severity": "warning", "product": "Gojo Keychain", "inventory": 4, "sku": "JJK-KC-001"}, {"source": "Amazon US", "severity": "warning", "name": "NRT-KC-002 Sasuke", "sku": "NRT-KC-002", "fulfillable": 6}, {"source": "Shopify", "severity": "warning", "product": "AOT Scout Set", "inventory": 7, "sku": "AOT-SET-001"}], "sources": {"shopify": true, "amazon": true, "meta": true, "xero": true, "klaviyo": true}, "period_days": 30, "generated_at": "2026-03-14T13:39:00.327187+00:00"};</script>
+</body>
+</html>
