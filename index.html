@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hermes Dashboard</title>
+    <title>Hermes | Weeb Workshop Analytics</title>
+    <!-- #11 Favicon: lightning bolt SVG data URI -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238b5cf6'%3E%3Cpath d='M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z'/%3E%3C/svg%3E">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -21,21 +23,129 @@
         }
     </script>
     <style>
-        body { background: #000; background-image: radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.06), transparent), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.04), transparent); }
-        .glass { background: rgba(20,20,34,0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; }
-        .kpi-card { background: linear-gradient(145deg, rgba(20,20,34,0.8), rgba(26,26,46,0.4)); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; transition: border-color 0.2s, box-shadow 0.2s; padding: 16px; }
-        .kpi-card:hover { border-color: rgba(139,92,246,0.3); box-shadow: 0 0 20px rgba(139,92,246,0.05); }
-        .kpi-card.highlight { border-color: rgba(139,92,246,0.2); background: linear-gradient(145deg, rgba(139,92,246,0.06), rgba(20,20,34,0.8)); }
+        body {
+            background: #000;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -20%, rgba(139,92,246,0.06), transparent),
+                radial-gradient(ellipse 60% 40% at 80% 100%, rgba(6,182,212,0.04), transparent);
+        }
+        .glass {
+            background: rgba(20,20,34,0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+        }
+        .kpi-card {
+            background: linear-gradient(145deg, rgba(20,20,34,0.8), rgba(26,26,46,0.4));
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+        .kpi-card:hover {
+            border-color: rgba(139,92,246,0.3);
+            box-shadow: 0 0 20px rgba(139,92,246,0.05);
+            transform: translateY(-1px);
+        }
+        /* #4 Hero KPI: larger, spans 2 columns */
+        .kpi-card.hero {
+            grid-column: span 2;
+            border-color: rgba(139,92,246,0.2);
+            padding: 20px 24px;
+        }
+        .kpi-card.hero .kpi-value { font-size: 2.25rem; }
+        /* #5 Animated gradient mesh on hero */
+        .kpi-card.hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg,
+                rgba(139,92,246,0.08) 0%,
+                rgba(6,182,212,0.04) 40%,
+                rgba(139,92,246,0.06) 70%,
+                rgba(6,182,212,0.08) 100%);
+            background-size: 300% 300%;
+            animation: meshShift 8s ease infinite;
+            border-radius: 12px;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .kpi-card.hero > * { position: relative; z-index: 1; }
+        @keyframes meshShift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        /* #3 Goal progress bar */
+        .goal-bar { height: 3px; background: rgba(255,255,255,0.04); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+        .goal-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+        /* #2 Change badge */
+        .change-badge {
+            display: inline-flex; align-items: center; gap: 2px;
+            font-size: 10px; font-family: 'Fira Code', monospace;
+            padding: 2px 6px; border-radius: 999px;
+        }
+        .change-up { background: rgba(52,211,153,0.1); color: #34d399; }
+        .change-down { background: rgba(239,68,68,0.1); color: #ef4444; }
+        .change-flat { background: rgba(148,163,184,0.1); color: #94a3b8; }
+        /* #13 Tooltip */
+        .kpi-tooltip {
+            position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); border: 1px solid rgba(139,92,246,0.2);
+            border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #94a3b8;
+            white-space: nowrap; pointer-events: none; opacity: 0;
+            transition: opacity 0.15s; z-index: 50; font-family: 'Fira Code', monospace;
+        }
+        .kpi-tooltip::after {
+            content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+            border: 5px solid transparent; border-top-color: rgba(0,0,0,0.95);
+        }
+        .kpi-card:hover .kpi-tooltip { opacity: 1; }
+        /* #14 Critical inventory pulsing */
         .status-bad { border-left: 3px solid #EF4444; }
         .status-warn { border-left: 3px solid #F59E0B; }
+        .alert-critical {
+            animation: criticalPulse 2s ease-in-out infinite;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        @keyframes criticalPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+            50% { box-shadow: 0 0 12px 2px rgba(239,68,68,0.15); }
+        }
+        /* Product rows */
         .product-row:hover { background: rgba(139,92,246,0.04); }
+        /* Trend arrows */
+        .trend-up { color: #34d399; }
+        .trend-down { color: #ef4444; }
+        .trend-flat { color: #94a3b8; }
+        /* #15 Mini calendar heatmap */
+        .heatmap-cell {
+            width: 14px; height: 14px; border-radius: 3px;
+            transition: transform 0.1s;
+        }
+        .heatmap-cell:hover { transform: scale(1.4); z-index: 10; }
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 5px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.15); border-radius: 3px; }
+        /* Responsive */
+        @media (max-width: 1280px) { .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; } .kpi-card.hero { grid-column: span 2; } }
         @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-        @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; } .chart-row, .bottom-row { grid-template-columns: 1fr !important; } }
+        @media (max-width: 768px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+            .kpi-card.hero { grid-column: span 2; }
+            .chart-row, .bottom-row, .products-row { grid-template-columns: 1fr !important; }
+            .col-span-2 { grid-column: span 1 !important; }
+        }
+        @media (max-width: 480px) {
+            .kpi-grid { grid-template-columns: 1fr !important; }
+            .kpi-card.hero { grid-column: span 1; }
+        }
     </style>
-<script>window.__HERMES_DATA__ = {"kpis": [{"key": "net_revenue", "label": "Net Revenue", "value": 42850.0, "format": "currency", "group": "revenue"}, {"key": "shopify_revenue", "label": "Shopify", "value": 3240.5, "format": "currency", "group": "revenue"}, {"key": "amazon_us_revenue", "label": "Amazon US", "value": 31200.0, "format": "currency", "group": "revenue"}, {"key": "amazon_uk_revenue", "label": "Amazon UK", "value": 8409.5, "format": "currency_gbp", "group": "revenue"}, {"key": "total_orders", "label": "Total Orders", "value": 1847, "format": "number", "group": "revenue"}, {"key": "blended_aov", "label": "Blended AOV", "value": 23.19, "format": "currency", "group": "efficiency"}, {"key": "meta_roas", "label": "Meta ROAS", "value": 2.34, "format": "multiplier", "group": "efficiency"}, {"key": "meta_cpa", "label": "Meta CPA", "value": 8.72, "format": "currency", "group": "efficiency"}, {"key": "blended_cac", "label": "Blended CAC", "value": 12.5, "format": "currency", "group": "efficiency"}, {"key": "meta_spend", "label": "Ad Spend", "value": 1450.0, "format": "currency", "group": "efficiency"}, {"key": "gross_margin", "label": "Gross Margin", "value": 52.3, "format": "percent", "group": "health"}, {"key": "cash_position", "label": "Cash Position", "value": 18420.0, "format": "currency_gbp", "group": "health"}, {"key": "email_list_size", "label": "Email List", "value": 4280, "format": "number", "group": "health"}, {"key": "returning_pct", "label": "Returning %", "value": 14.2, "format": "percent", "group": "health"}, {"key": "inventory_alerts", "label": "Stock Alerts", "value": 5, "format": "number", "group": "health", "detail": "2 OOS, 3 low"}], "channel_breakdown": {"Shopify": 3240.5, "Amazon US": 31200.0, "Amazon UK": 8409.5}, "channel_pct": {"Shopify": 7.6, "Amazon US": 72.8, "Amazon UK": 19.6}, "daily_series": {"2026-02-13": {"shopify": 324.5, "amazon_us": 1705.99, "amazon_uk": 364.55}, "2026-02-14": {"shopify": 265.87, "amazon_us": 1551.06, "amazon_uk": 519.1}, "2026-02-15": {"shopify": 179.67, "amazon_us": 963.5, "amazon_uk": 366.48}, "2026-02-16": {"shopify": 319.13, "amazon_us": 1159.69, "amazon_uk": 357.9}, "2026-02-17": {"shopify": 285.63, "amazon_us": 1129.12, "amazon_uk": 556.51}, "2026-02-18": {"shopify": 117.35, "amazon_us": 1356.04, "amazon_uk": 412.07}, "2026-02-19": {"shopify": 267.35, "amazon_us": 1946.8, "amazon_uk": 296.19}, "2026-02-20": {"shopify": 238.94, "amazon_us": 2001.08, "amazon_uk": 218.53}, "2026-02-21": {"shopify": 232.83, "amazon_us": 1192.23, "amazon_uk": 520.3}, "2026-02-22": {"shopify": 66.39, "amazon_us": 1168.95, "amazon_uk": 204.97}, "2026-02-23": {"shopify": 371.07, "amazon_us": 1373.61, "amazon_uk": 562.79}, "2026-02-24": {"shopify": 368.67, "amazon_us": 1947.65, "amazon_uk": 586.47}, "2026-02-25": {"shopify": 194.86, "amazon_us": 1755.64, "amazon_uk": 507.63}, "2026-02-26": {"shopify": 276.85, "amazon_us": 1507.56, "amazon_uk": 240.87}, "2026-02-27": {"shopify": 357.45, "amazon_us": 1456.24, "amazon_uk": 486.83}, "2026-02-28": {"shopify": 221.75, "amazon_us": 1612.74, "amazon_uk": 442.04}, "2026-03-01": {"shopify": 66.65, "amazon_us": 1941.51, "amazon_uk": 485.19}, "2026-03-02": {"shopify": 262.03, "amazon_us": 869.93, "amazon_uk": 204.77}, "2026-03-03": {"shopify": 172.23, "amazon_us": 1025.74, "amazon_uk": 363.7}, "2026-03-04": {"shopify": 238.38, "amazon_us": 1464.94, "amazon_uk": 581.13}, "2026-03-05": {"shopify": 119.14, "amazon_us": 1806.85, "amazon_uk": 308.69}, "2026-03-06": {"shopify": 70.16, "amazon_us": 2026.9, "amazon_uk": 312.59}, "2026-03-07": {"shopify": 149.26, "amazon_us": 1352.86, "amazon_uk": 310.96}, "2026-03-08": {"shopify": 334.03, "amazon_us": 2002.5, "amazon_uk": 425.79}, "2026-03-09": {"shopify": 161.55, "amazon_us": 2121.67, "amazon_uk": 499.36}, "2026-03-10": {"shopify": 327.72, "amazon_us": 2121.16, "amazon_uk": 281.22}, "2026-03-11": {"shopify": 81.61, "amazon_us": 2068.97, "amazon_uk": 557.08}, "2026-03-12": {"shopify": 241.32, "amazon_us": 1438.3, "amazon_uk": 385.22}, "2026-03-13": {"shopify": 343.34, "amazon_us": 1700.24, "amazon_uk": 364.23}, "2026-03-14": {"shopify": 335.6, "amazon_us": 875.99, "amazon_uk": 547.3}}, "top_products_shopify": [{"name": "One Piece Straw Hat Bundle (3-Pack)", "revenue": 1240.0, "units": 62}, {"name": "Demon Slayer Tanjiro Metal Keychain", "revenue": 890.0, "units": 45}, {"name": "JJK Gojo Premium Keychain", "revenue": 720.0, "units": 36}, {"name": "Attack on Titan Scout Regiment Set", "revenue": 540.0, "units": 18}, {"name": "Naruto Akatsuki Cloud Keychain", "revenue": 380.0, "units": 22}], "meta_campaigns": [{"name": "UK - Broad - Anime Keychains", "spend": 420.0, "roas": 2.8, "purchases": 34, "status": "ACTIVE"}, {"name": "UK - LAL - Purchasers", "spend": 310.0, "roas": 3.1, "purchases": 28, "status": "ACTIVE"}, {"name": "US - Testing - New Creatives", "spend": 180.0, "roas": 1.2, "purchases": 8, "status": "ACTIVE"}], "inventory_alerts": [{"source": "Amazon US", "severity": "critical", "name": "OP-KC-001 Luffy", "sku": "OP-KC-001"}, {"source": "Amazon UK", "severity": "critical", "name": "DS-KC-003 Tanjiro", "sku": "DS-KC-003"}, {"source": "Shopify", "severity": "warning", "product": "Gojo Keychain", "inventory": 4, "sku": "JJK-KC-001"}, {"source": "Amazon US", "severity": "warning", "name": "NRT-KC-002 Sasuke", "sku": "NRT-KC-002", "fulfillable": 6}, {"source": "Shopify", "severity": "warning", "product": "AOT Scout Set", "inventory": 7, "sku": "AOT-SET-001"}], "sources": {"shopify": true, "amazon": true, "meta": true, "xero": true, "klaviyo": true}, "period_days": 30, "generated_at": "2026-03-14T14:03:12.528532+00:00"};</script>
+<script>window.__HERMES_DATA__ = {"kpis": [{"key": "net_revenue", "label": "Net Revenue", "value": 42850.0, "format": "currency", "group": "revenue", "sparkline": [1273.45, 1336.37, 1461.8, 1453.01, 1303.57, 1281.46, 1472.33], "change": 8.4, "target": 1000000, "progress": 4.3, "tooltip": "Shopify $3,241 + Amazon US $31,200 + Amazon UK $8,410"}, {"key": "shopify_revenue", "label": "Shopify", "value": 3240.5, "format": "currency", "group": "revenue", "sparkline": [104.1, 133.68, 163.54, 123.69, 141.8, 159.51, 166.75], "change": 22.1, "target": 300000, "progress": 1.1, "tooltip": "148 orders at $21.90 AOV"}, {"key": "amazon_us_revenue", "label": "Amazon US", "value": 31200.0, "format": "currency", "group": "revenue", "sparkline": [958.7, 998.02, 922.71, 918.7, 918.53, 1019.42, 1113.91], "change": 5.7, "target": 500000, "progress": 6.2, "tooltip": "1,412 orders this period"}, {"key": "amazon_uk_revenue", "label": "Amazon UK", "value": 8409.5, "format": "currency_gbp", "group": "revenue", "sparkline": [264.84, 266.2, 246.15, 272.77, 299.4, 285.81, 297.17], "change": -3.2, "target": 120000, "progress": 7.0, "tooltip": "287 orders this period"}, {"key": "total_orders", "label": "Total Orders", "value": 1847, "format": "number", "group": "revenue", "sparkline": [62.69, 56.35, 61.65, 63.05, 69.3, 70.66, 60.08], "change": 4.1, "tooltip": "Shopify 148 + Amazon US 1,412 + Amazon UK 287"}, {"key": "blended_aov", "label": "Blended AOV", "value": 23.19, "format": "currency", "group": "efficiency", "sparkline": [22.67, 21.59, 22.71, 23.77, 24.76, 24.36, 23.29], "change": 1.8, "tooltip": "Total revenue / total orders"}, {"key": "meta_roas", "label": "Meta ROAS", "value": 2.34, "format": "multiplier", "group": "efficiency", "sparkline": [2.51, 2.79, 2.56, 2.58, 2.36, 2.52, 2.69], "change": 12.3, "tooltip": "$1,450 spend, 42 purchases"}, {"key": "meta_cpa", "label": "Meta CPA", "value": 8.72, "format": "currency", "group": "efficiency", "sparkline": [8.17, 8.1, 8.12, 7.79, 8.19, 8.05, 7.67], "change": -5.4, "tooltip": "Cost per acquisition from Meta Ads"}, {"key": "blended_cac", "label": "Blended CAC", "value": 12.5, "format": "currency", "group": "efficiency", "sparkline": [12.54, 12.96, 12.33, 11.94, 12.82, 13.09, 12.93], "change": -2.1, "tooltip": "All ad spend / all new customers"}, {"key": "meta_spend", "label": "Ad Spend", "value": 1450.0, "format": "currency", "group": "efficiency", "sparkline": [48.42, 44.81, 42.44, 41.21, 42.18, 40.0, 37.85], "change": 3.5, "tooltip": "42 purchases from $1,450 spend"}, {"key": "gross_margin", "label": "Gross Margin", "value": 52.3, "format": "percent", "group": "health", "sparkline": [50.68, 51.24, 50.46, 51.92, 53.26, 51.91, 51.16], "change": 0.8, "tooltip": "From Xero P&L (90-day)"}, {"key": "cash_position", "label": "Cash Position", "value": 18420.0, "format": "currency_gbp", "group": "health", "sparkline": [18525.64, 18062.44, 17507.23, 17953.42, 17952.94, 17828.83, 18094.89], "change": -6.2, "tooltip": "Total bank balances from Xero"}, {"key": "email_list_size", "label": "Email List", "value": 4280, "format": "number", "group": "health", "sparkline": [4285.57, 4240.66, 4176.4, 4182.89, 4187.82, 4201.85, 4270.99], "change": 3.1, "tooltip": "Klaviyo total profiles across all lists"}, {"key": "returning_pct", "label": "Returning %", "value": 14.2, "format": "percent", "group": "health", "sparkline": [14.39, 15.36, 14.64, 14.53, 14.29, 15.04, 14.62], "change": 1.5, "tooltip": "Shopify returning customer percentage"}, {"key": "inventory_alerts", "label": "Stock Alerts", "value": 5, "format": "number", "group": "health", "detail": "2 OOS, 3 low", "sparkline": [3, 4, 4, 5, 5, 6, 5], "change": 25.0, "tooltip": "2 out of stock, 3 low stock across all channels"}], "channel_breakdown": {"Shopify": 3240.5, "Amazon US": 31200.0, "Amazon UK": 8409.5}, "channel_pct": {"Shopify": 7.6, "Amazon US": 72.8, "Amazon UK": 19.6}, "daily_series": {"2026-02-13": {"shopify": 273.8, "amazon_us": 835.02, "amazon_uk": 310.01}, "2026-02-14": {"shopify": 128.12, "amazon_us": 1831.06, "amazon_uk": 470.68}, "2026-02-15": {"shopify": 362.26, "amazon_us": 921.71, "amazon_uk": 368.77}, "2026-02-16": {"shopify": 60.43, "amazon_us": 1106.09, "amazon_uk": 402.14}, "2026-02-17": {"shopify": 59.29, "amazon_us": 1078.37, "amazon_uk": 459.95}, "2026-02-18": {"shopify": 240.73, "amazon_us": 1108.62, "amazon_uk": 435.71}, "2026-02-19": {"shopify": 333.3, "amazon_us": 809.1, "amazon_uk": 522.33}, "2026-02-20": {"shopify": 294.35, "amazon_us": 1276.35, "amazon_uk": 262.19}, "2026-02-21": {"shopify": 385.02, "amazon_us": 1271.23, "amazon_uk": 237.1}, "2026-02-22": {"shopify": 83.85, "amazon_us": 1986.49, "amazon_uk": 441.49}, "2026-02-23": {"shopify": 332.49, "amazon_us": 1821.62, "amazon_uk": 414.49}, "2026-02-24": {"shopify": 390.59, "amazon_us": 1329.95, "amazon_uk": 420.82}, "2026-02-25": {"shopify": 340.29, "amazon_us": 1665.93, "amazon_uk": 544.68}, "2026-02-26": {"shopify": 252.07, "amazon_us": 1786.4, "amazon_uk": 218.33}, "2026-02-27": {"shopify": 129.76, "amazon_us": 1205.14, "amazon_uk": 231.92}, "2026-02-28": {"shopify": 131.48, "amazon_us": 941.4, "amazon_uk": 311.19}, "2026-03-01": {"shopify": 272.49, "amazon_us": 1310.77, "amazon_uk": 348.07}, "2026-03-02": {"shopify": 123.33, "amazon_us": 1173.77, "amazon_uk": 574.66}, "2026-03-03": {"shopify": 276.81, "amazon_us": 1652.78, "amazon_uk": 268.46}, "2026-03-04": {"shopify": 305.19, "amazon_us": 1028.76, "amazon_uk": 351.78}, "2026-03-05": {"shopify": 396.33, "amazon_us": 1696.0, "amazon_uk": 422.78}, "2026-03-06": {"shopify": 289.61, "amazon_us": 1979.99, "amazon_uk": 510.4}, "2026-03-07": {"shopify": 130.17, "amazon_us": 844.94, "amazon_uk": 326.18}, "2026-03-08": {"shopify": 143.71, "amazon_us": 1095.38, "amazon_uk": 577.16}, "2026-03-09": {"shopify": 356.73, "amazon_us": 1240.55, "amazon_uk": 462.18}, "2026-03-10": {"shopify": 188.47, "amazon_us": 2080.37, "amazon_uk": 383.54}, "2026-03-11": {"shopify": 142.71, "amazon_us": 1145.28, "amazon_uk": 424.55}, "2026-03-12": {"shopify": 141.96, "amazon_us": 1618.42, "amazon_uk": 559.13}, "2026-03-13": {"shopify": 189.79, "amazon_us": 1107.05, "amazon_uk": 599.02}, "2026-03-14": {"shopify": 228.33, "amazon_us": 927.27, "amazon_uk": 218.85}}, "top_products_shopify": [{"name": "One Piece Straw Hat Bundle (3-Pack)", "revenue": 1240.0, "units": 62, "channel": "Shopify", "conversion_rate": 4.8, "trend": "up"}, {"name": "Attack on Titan Scout Regiment Set", "revenue": 540.0, "units": 18, "channel": "Shopify", "conversion_rate": 3.9, "trend": "up"}], "top_products_amazon_us": [{"name": "Demon Slayer Tanjiro Metal Keychain", "revenue": 890.0, "units": 45, "channel": "Amazon US", "conversion_rate": 6.2, "trend": "up"}, {"name": "JJK Gojo Premium Keychain", "revenue": 720.0, "units": 36, "channel": "Amazon US", "conversion_rate": 5.1, "trend": "flat"}, {"name": "Naruto Akatsuki Cloud Keychain", "revenue": 380.0, "units": 22, "channel": "Amazon US", "conversion_rate": 4.5, "trend": "down"}, {"name": "One Piece Zoro 3-Sword Keychain", "revenue": 2840.0, "units": 142, "channel": "Amazon US", "conversion_rate": 7.8, "trend": "up"}, {"name": "Demon Slayer Nezuko Acrylic Tag", "revenue": 1920.0, "units": 96, "channel": "Amazon US", "conversion_rate": 5.9, "trend": "up"}, {"name": "One Piece Ace Fire Fist Keychain", "revenue": 1480.0, "units": 74, "channel": "Amazon US", "conversion_rate": 5.4, "trend": "up"}], "top_products_amazon_uk": [{"name": "JJK Sukuna Finger Keychain", "revenue": 1650.0, "units": 82, "channel": "Amazon UK", "conversion_rate": 6.1, "trend": "flat"}, {"name": "Naruto Sharingan Metal Keychain", "revenue": 1120.0, "units": 56, "channel": "Amazon UK", "conversion_rate": 4.7, "trend": "down"}], "bottom_products": [{"name": "AOT Colossal Titan Mini Figure Tag", "revenue": 28.0, "units": 2, "channel": "Shopify", "conversion_rate": 0.3, "trend": "down"}, {"name": "Naruto Ramen Bowl Charm", "revenue": 42.0, "units": 3, "channel": "Shopify", "conversion_rate": 0.5, "trend": "down"}, {"name": "Demon Slayer Muzan Keychain", "revenue": 56.0, "units": 4, "channel": "Amazon UK", "conversion_rate": 0.8, "trend": "flat"}, {"name": "One Piece Brook Keychain", "revenue": 63.0, "units": 5, "channel": "Amazon US", "conversion_rate": 0.9, "trend": "down"}, {"name": "JJK Panda Acrylic Tag", "revenue": 70.0, "units": 5, "channel": "Amazon US", "conversion_rate": 1.0, "trend": "flat"}, {"name": "Naruto Hinata Keychain", "revenue": 77.0, "units": 6, "channel": "Amazon UK", "conversion_rate": 1.1, "trend": "down"}, {"name": "AOT Mikasa Scarf Charm", "revenue": 84.0, "units": 6, "channel": "Shopify", "conversion_rate": 0.7, "trend": "flat"}, {"name": "Demon Slayer Inosuke Boar Head Tag", "revenue": 91.0, "units": 7, "channel": "Amazon US", "conversion_rate": 1.2, "trend": "down"}, {"name": "One Piece Chopper Cotton Candy Charm", "revenue": 98.0, "units": 7, "channel": "Shopify", "conversion_rate": 0.6, "trend": "down"}, {"name": "JJK Nobara Hammer Keychain", "revenue": 105.0, "units": 8, "channel": "Amazon UK", "conversion_rate": 1.3, "trend": "flat"}], "meta_campaigns": [{"name": "UK - Broad - Anime Keychains", "spend": 420.0, "roas": 2.8, "purchases": 34, "status": "ACTIVE"}, {"name": "UK - LAL - Purchasers", "spend": 310.0, "roas": 3.1, "purchases": 28, "status": "ACTIVE"}, {"name": "US - Testing - New Creatives", "spend": 180.0, "roas": 1.2, "purchases": 8, "status": "ACTIVE"}], "inventory_alerts": [{"source": "Amazon US", "severity": "critical", "name": "OP-KC-001 Luffy", "sku": "OP-KC-001"}, {"source": "Amazon UK", "severity": "critical", "name": "DS-KC-003 Tanjiro", "sku": "DS-KC-003"}, {"source": "Shopify", "severity": "warning", "product": "Gojo Keychain", "inventory": 4, "sku": "JJK-KC-001"}, {"source": "Amazon US", "severity": "warning", "name": "NRT-KC-002 Sasuke", "sku": "NRT-KC-002", "fulfillable": 6}, {"source": "Shopify", "severity": "warning", "product": "AOT Scout Set", "inventory": 7, "sku": "AOT-SET-001"}], "sources": {"shopify": true, "amazon": true, "meta": true, "xero": true, "klaviyo": true}, "period_days": 30, "generated_at": "2026-03-14T14:14:34.451714+00:00"};</script>
 </head>
 <body class="font-sans text-slate-200 min-h-screen antialiased">
 
@@ -52,6 +162,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-6">
+                <!-- #12 Date range -->
+                <span id="date-range" class="text-[11px] text-slate-400 font-mono hidden sm:inline"></span>
                 <div id="period-selector" class="flex bg-white/[0.03] rounded-lg p-0.5 border border-white/5"></div>
                 <div class="flex items-center gap-2">
                     <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
@@ -68,7 +180,7 @@
 
 <script>
 (function() {
-    const DATA = window.__HERMES_DATA__;
+    var DATA = window.__HERMES_DATA__;
     if (!DATA) {
         document.getElementById('dashboard-content').innerHTML = '<p class="text-red-400 text-center py-20">No data available. Generate with: python generate_dashboard.py --demo</p>';
         return;
@@ -76,7 +188,7 @@
 
     // ── Helpers ──
     function fmt(kpi) {
-        const v = kpi.value;
+        var v = kpi.value;
         if (v === null || v === undefined) return '\u2014';
         switch (kpi.format) {
             case 'currency': return v >= 10000 ? '$' + (v/1000).toFixed(1) + 'k' : '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -89,7 +201,7 @@
     }
 
     function kpiColor(kpi) {
-        const v = kpi.value;
+        var v = kpi.value;
         if (v === null || v === undefined) return 'text-slate-400';
         if (kpi.key === 'meta_roas') return v >= 2 ? 'text-emerald-400' : v > 0 ? 'text-amber-400' : 'text-slate-400';
         if (kpi.key === 'meta_cpa' || kpi.key === 'cac') return v > 30 ? 'text-red-400' : v > 20 ? 'text-amber-400' : 'text-emerald-400';
@@ -99,238 +211,530 @@
         return 'text-white';
     }
 
-    function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+    // ── #1 Sparkline SVG builder ──
+    function buildSparkline(data, color) {
+        if (!data || data.length < 2) return '';
+        var w = 60, h = 24, pad = 2;
+        var min = Math.min.apply(null, data);
+        var max = Math.max.apply(null, data);
+        var range = max - min || 1;
+        var points = data.map(function(v, i) {
+            var x = pad + (i / (data.length - 1)) * (w - pad * 2);
+            var y = pad + (1 - (v - min) / range) * (h - pad * 2);
+            return x.toFixed(1) + ',' + y.toFixed(1);
+        }).join(' ');
+        return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" fill="none" style="display:block;">' +
+            '<polyline points="' + points + '" stroke="' + color + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>' +
+            '</svg>';
+    }
+
+    // ── #2 Change badge builder ──
+    function buildChangeBadge(change) {
+        if (change === null || change === undefined) return '';
+        var isUp = change > 0;
+        var isFlat = change === 0;
+        var cls = isFlat ? 'change-flat' : isUp ? 'change-up' : 'change-down';
+        var arrow = isFlat ? '' : isUp ? '\u2191' : '\u2193';
+        var sign = isUp ? '+' : '';
+        return '<span class="change-badge ' + cls + '">' + arrow + sign + change.toFixed(1) + '%</span>';
+    }
+
+    // ── #3 Goal progress bar ──
+    function buildGoalBar(kpi) {
+        if (!kpi.target || kpi.progress === undefined) return '';
+        var pct = Math.min(kpi.progress, 100);
+        var color = pct < 5 ? '#ef4444' : pct < 15 ? '#f59e0b' : '#8b5cf6';
+        return '<div class="goal-bar"><div class="goal-bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+            '<p class="text-[9px] text-slate-600 mt-1 font-mono">' + pct.toFixed(1) + '% of ' +
+            (kpi.format === 'currency_gbp' ? '\u00A3' : '$') + (kpi.target >= 1000 ? (kpi.target/1000).toFixed(0) + 'k' : kpi.target) + ' target</p>';
+    }
+
+    // ── #10 Pulse summary ──
+    function buildPulseSummary() {
+        var revKpi = DATA.kpis.find(function(k) { return k.key === 'net_revenue'; });
+        var alertKpi = DATA.kpis.find(function(k) { return k.key === 'inventory_alerts'; });
+        var roasKpi = DATA.kpis.find(function(k) { return k.key === 'meta_roas'; });
+
+        var parts = [];
+        if (revKpi && revKpi.change !== undefined) {
+            var dir = revKpi.change > 0 ? 'up' : revKpi.change < 0 ? 'down' : 'flat';
+            parts.push('Revenue ' + dir + ' ' + Math.abs(revKpi.change).toFixed(1) + '% WoW');
+        }
+        if (alertKpi && alertKpi.value > 0) {
+            var oos = (alertKpi.detail || '').match(/(\d+)\s*OOS/);
+            parts.push((oos ? oos[1] : alertKpi.value) + ' item' + (alertKpi.value > 1 ? 's' : '') + ' need restocking');
+        }
+        if (roasKpi && roasKpi.value > 0) {
+            parts.push('Meta ROAS at ' + roasKpi.value.toFixed(2) + 'x');
+        }
+
+        if (parts.length === 0) return '';
+        return '<div class="glass px-5 py-3 text-center">' +
+            '<p class="text-[12px] font-mono text-slate-400">' +
+            '<span class="text-purple-400 mr-2">\u26A1</span>' +
+            parts.join('<span class="text-slate-700 mx-2">|</span>') +
+            '</p></div>';
+    }
+
+    // ── KPI Card Builder ──
+    function buildKpiCard(kpi) {
+        var isHero = kpi.key === 'net_revenue';
+        var cls = isHero ? 'kpi-card hero' : 'kpi-card';
+        var sparkColor = kpi.change > 0 ? '#34d399' : kpi.change < 0 ? '#ef4444' : '#94a3b8';
+        var hasGoal = ['net_revenue', 'shopify_revenue', 'amazon_us_revenue', 'amazon_uk_revenue'].indexOf(kpi.key) >= 0;
+        var tooltip = kpi.tooltip ? '<div class="kpi-tooltip">' + esc(kpi.tooltip) + '</div>' : '';
+        var detail = kpi.detail ? '<p class="text-[10px] text-slate-600 mt-1">' + esc(kpi.detail) + '</p>' : '';
+        var valueCls = isHero ? 'kpi-value text-4xl' : 'kpi-value text-2xl';
+
+        return '<div class="' + cls + '">' +
+            tooltip +
+            '<div class="flex items-center justify-between mb-1.5">' +
+                '<p class="text-[11px] text-slate-500 font-medium">' + esc(kpi.label) + '</p>' +
+                buildChangeBadge(kpi.change) +
+            '</div>' +
+            '<div class="flex items-end justify-between gap-3">' +
+                '<p class="' + valueCls + ' font-semibold font-mono tracking-tight ' + kpiColor(kpi) + '">' + fmt(kpi) + '</p>' +
+                '<div class="flex-shrink-0 mb-1">' + buildSparkline(kpi.sparkline, sparkColor) + '</div>' +
+            '</div>' +
+            detail +
+            (hasGoal ? buildGoalBar(kpi) : '') +
+        '</div>';
+    }
 
     // ── KPI Row Builder ──
     function buildKpiRow(label, icon, color, group) {
-        const kpis = DATA.kpis.filter(k => k.group === group);
-        let cards = kpis.map(kpi => {
-            const isHighlight = kpi.key === 'net_revenue' ? ' highlight' : '';
-            const detail = kpi.detail ? `<p class="text-[10px] text-slate-600 mt-1">${esc(kpi.detail)}</p>` : '';
-            return `<div class="kpi-card${isHighlight}">
-                <p class="text-[11px] text-slate-500 mb-1.5 font-medium">${esc(kpi.label)}</p>
-                <p class="text-2xl font-semibold font-mono tracking-tight ${kpiColor(kpi)}">${fmt(kpi)}</p>
-                ${detail}
-            </div>`;
-        }).join('');
+        var kpis = DATA.kpis.filter(function(k) { return k.group === group; });
+        var cards = kpis.map(function(kpi) { return buildKpiCard(kpi); }).join('');
 
-        return `<div>
-            <div class="flex items-center gap-2 mb-2.5">
-                <svg class="w-3.5 h-3.5 ${color}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="${icon}"/></svg>
-                <p class="text-[11px] font-mono text-slate-500 tracking-[0.15em] uppercase">${label}</p>
-            </div>
-            <div class="grid grid-cols-5 gap-3 kpi-grid">${cards}</div>
-        </div>`;
+        return '<div>' +
+            '<div class="flex items-center gap-2 mb-2.5">' +
+                '<svg class="w-3.5 h-3.5 ' + color + '" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="' + icon + '"/></svg>' +
+                '<p class="text-[11px] font-mono text-slate-500 tracking-[0.15em] uppercase">' + label + '</p>' +
+            '</div>' +
+            '<div class="grid grid-cols-5 gap-3 kpi-grid">' + cards + '</div>' +
+        '</div>';
     }
 
-    // ── Products Table ──
+    // ── #7 Products Table (with CVR and trend) ──
     function buildProductsTable() {
-        const shopify = (DATA.top_products_shopify || []).map(p => ({...p, channel: 'Shopify'}));
-        const amazonUs = (DATA.top_products_amazon_us || []).map(p => ({...p, channel: 'Amazon US'}));
-        const amazonUk = (DATA.top_products_amazon_uk || []).map(p => ({...p, channel: 'Amazon UK'}));
-        let all = [...shopify, ...amazonUs, ...amazonUk].sort((a,b) => Number(b.revenue) - Number(a.revenue)).slice(0,10);
+        var shopify = (DATA.top_products_shopify || []).map(function(p) { return Object.assign({}, p, {channel: p.channel || 'Shopify'}); });
+        var amazonUs = (DATA.top_products_amazon_us || []).map(function(p) { return Object.assign({}, p, {channel: p.channel || 'Amazon US'}); });
+        var amazonUk = (DATA.top_products_amazon_uk || []).map(function(p) { return Object.assign({}, p, {channel: p.channel || 'Amazon UK'}); });
+        var all = shopify.concat(amazonUs).concat(amazonUk).sort(function(a,b) { return Number(b.revenue) - Number(a.revenue); }).slice(0,10);
         if (all.length === 0) all = shopify.slice(0,10);
 
-        const channelBadge = ch => {
-            const cls = ch === 'Shopify' ? 'bg-purple-500/10 text-purple-400' : ch === 'Amazon US' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-pink-500/10 text-pink-400';
-            return `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded ${cls}">${ch}</span>`;
+        var channelBadge = function(ch) {
+            var cls = ch === 'Shopify' ? 'bg-purple-500/10 text-purple-400' : ch === 'Amazon US' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-pink-500/10 text-pink-400';
+            return '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded ' + cls + '">' + ch + '</span>';
         };
 
-        const rows = all.length > 0 ? all.map((p, i) =>
-            `<tr class="border-b border-white/[0.03] product-row">
-                <td class="py-3 pl-3 text-xs font-mono ${i < 3 ? 'text-purple-400' : 'text-slate-600'}">${i+1}</td>
-                <td class="py-3 text-sm text-slate-300 max-w-[280px] truncate">${esc(p.name)}</td>
-                <td class="py-3">${channelBadge(p.channel)}</td>
-                <td class="py-3 text-sm font-mono text-right text-slate-200">$${Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:2})}</td>
-                <td class="py-3 text-sm font-mono text-right pr-3 text-slate-500">${p.units}</td>
-            </tr>`
-        ).join('') : '<tr><td colspan="5" class="py-10 text-center text-sm text-slate-600">No product data</td></tr>';
+        var trendIcon = function(t) {
+            if (t === 'up') return '<span class="trend-up text-xs">\u2191</span>';
+            if (t === 'down') return '<span class="trend-down text-xs">\u2193</span>';
+            return '<span class="trend-flat text-xs">\u2192</span>';
+        };
 
-        return `<div class="col-span-2 glass p-5">
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-sm font-semibold text-slate-200">Product Rankings</h2>
-                <span class="text-[10px] font-mono text-slate-500 bg-white/[0.03] px-2 py-1 rounded">${DATA.period_days} days</span>
-            </div>
-            <table class="w-full">
-                <thead><tr class="text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-white/5">
-                    <th class="text-left pb-3 pl-3 w-8">#</th><th class="text-left pb-3">Product</th><th class="text-left pb-3">Channel</th><th class="text-right pb-3">Revenue</th><th class="text-right pb-3 pr-3">Units</th>
-                </tr></thead>
-                <tbody>${rows}</tbody>
-            </table>
-        </div>`;
+        var rows = all.length > 0 ? all.map(function(p, i) {
+            var cvr = p.conversion_rate ? p.conversion_rate.toFixed(1) + '%' : '\u2014';
+            return '<tr class="border-b border-white/[0.03] product-row">' +
+                '<td class="py-3 pl-3 text-xs font-mono ' + (i < 3 ? 'text-purple-400' : 'text-slate-600') + '">' + (i+1) + '</td>' +
+                '<td class="py-3 text-sm text-slate-300 max-w-[240px] truncate">' + esc(p.name) + '</td>' +
+                '<td class="py-3">' + channelBadge(p.channel) + '</td>' +
+                '<td class="py-3 text-sm font-mono text-right text-slate-200">$' + Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+                '<td class="py-3 text-sm font-mono text-right text-slate-500">' + p.units + '</td>' +
+                '<td class="py-3 text-sm font-mono text-right text-slate-400">' + cvr + '</td>' +
+                '<td class="py-3 text-center">' + trendIcon(p.trend) + '</td>' +
+            '</tr>';
+        }).join('') : '<tr><td colspan="7" class="py-10 text-center text-sm text-slate-600">No product data</td></tr>';
+
+        return '<div class="col-span-2 glass p-5">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h2 class="text-sm font-semibold text-slate-200">Top Products</h2>' +
+                '<span class="text-[10px] font-mono text-slate-500 bg-white/[0.03] px-2 py-1 rounded">' + DATA.period_days + ' days</span>' +
+            '</div>' +
+            '<div class="overflow-x-auto">' +
+            '<table class="w-full">' +
+                '<thead><tr class="text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-white/5">' +
+                    '<th class="text-left pb-3 pl-3 w-8">#</th><th class="text-left pb-3">Product</th><th class="text-left pb-3">Channel</th><th class="text-right pb-3">Revenue</th><th class="text-right pb-3">Units</th><th class="text-right pb-3">CVR</th><th class="text-center pb-3 w-8">Trend</th>' +
+                '</tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+        '</div>';
     }
 
-    // ── Inventory Alerts ──
-    function buildAlerts() {
-        const alerts = DATA.inventory_alerts || [];
-        const badge = alerts.length > 0
-            ? `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">${alerts.length} alerts</span>`
-            : `<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">All clear</span>`;
+    // ── #8 Bottom Products ──
+    function buildBottomProducts() {
+        var bottom = DATA.bottom_products || [];
+        if (bottom.length === 0) return '';
 
-        const items = alerts.length > 0 ? alerts.map(a => {
-            const cls = a.severity === 'critical' ? 'status-bad' : 'status-warn';
-            const name = a.product || a.name || a.sku;
-            const status = a.severity === 'critical' ? '<span class="text-[10px] font-mono font-semibold text-red-400">OUT OF STOCK</span>' : `<span class="text-[10px] font-mono font-semibold text-amber-400">${a.inventory || a.fulfillable} left</span>`;
-            return `<div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs ${cls}">
-                <div class="flex items-center justify-between"><span class="text-slate-300 truncate max-w-[170px] font-medium">${esc(name)}</span>${status}</div>
-                <p class="text-[10px] text-slate-600 mt-0.5">${esc(a.source)}</p>
-            </div>`;
+        var channelBadge = function(ch) {
+            var cls = ch === 'Shopify' ? 'bg-purple-500/10 text-purple-400' : ch === 'Amazon US' ? 'bg-cyan-500/10 text-cyan-400' : 'bg-pink-500/10 text-pink-400';
+            return '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded ' + cls + '">' + ch + '</span>';
+        };
+
+        var trendIcon = function(t) {
+            if (t === 'up') return '<span class="trend-up text-xs">\u2191</span>';
+            if (t === 'down') return '<span class="trend-down text-xs">\u2193</span>';
+            return '<span class="trend-flat text-xs">\u2192</span>';
+        };
+
+        var rows = bottom.map(function(p, i) {
+            var cvr = p.conversion_rate ? p.conversion_rate.toFixed(1) + '%' : '\u2014';
+            return '<tr class="border-b border-white/[0.03] product-row">' +
+                '<td class="py-2.5 pl-3 text-xs font-mono text-red-400/60">' + (i+1) + '</td>' +
+                '<td class="py-2.5 text-sm text-slate-400 max-w-[240px] truncate">' + esc(p.name) + '</td>' +
+                '<td class="py-2.5">' + channelBadge(p.channel) + '</td>' +
+                '<td class="py-2.5 text-sm font-mono text-right text-red-400/70">$' + Number(p.revenue).toLocaleString('en-US',{minimumFractionDigits:2}) + '</td>' +
+                '<td class="py-2.5 text-sm font-mono text-right text-slate-600">' + p.units + '</td>' +
+                '<td class="py-2.5 text-sm font-mono text-right text-red-400/50">' + cvr + '</td>' +
+                '<td class="py-2.5 text-center">' + trendIcon(p.trend) + '</td>' +
+            '</tr>';
+        }).join('');
+
+        return '<div class="glass p-5">' +
+            '<div class="flex items-center justify-between mb-4">' +
+                '<h2 class="text-sm font-semibold text-slate-200">Bottom Performers</h2>' +
+                '<span class="text-[10px] font-mono text-red-400/50 bg-red-500/5 px-2 py-1 rounded">Needs attention</span>' +
+            '</div>' +
+            '<div class="overflow-x-auto">' +
+            '<table class="w-full">' +
+                '<thead><tr class="text-[10px] font-mono text-slate-500 uppercase tracking-wider border-b border-white/5">' +
+                    '<th class="text-left pb-3 pl-3 w-8">#</th><th class="text-left pb-3">Product</th><th class="text-left pb-3">Channel</th><th class="text-right pb-3">Revenue</th><th class="text-right pb-3">Units</th><th class="text-right pb-3">CVR</th><th class="text-center pb-3 w-8">Trend</th>' +
+                '</tr></thead>' +
+                '<tbody>' + rows + '</tbody>' +
+            '</table></div>' +
+        '</div>';
+    }
+
+    // ── #14 Inventory Alerts (with urgency styling) ──
+    function buildAlerts() {
+        var alerts = DATA.inventory_alerts || [];
+        var badge = alerts.length > 0
+            ? '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/10 text-red-400">' + alerts.length + ' alerts</span>'
+            : '<span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400">All clear</span>';
+
+        var items = alerts.length > 0 ? alerts.map(function(a) {
+            var isCritical = a.severity === 'critical';
+            var borderCls = isCritical ? 'status-bad' : 'status-warn';
+            var extraCls = isCritical ? ' alert-critical' : '';
+            var name = a.product || a.name || a.sku;
+            var status = isCritical
+                ? '<span class="text-[10px] font-mono font-semibold text-red-400 animate-pulse">OUT OF STOCK</span>'
+                : '<span class="text-[10px] font-mono font-semibold text-amber-400">' + (a.inventory || a.fulfillable) + ' left</span>';
+            return '<div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs ' + borderCls + extraCls + '">' +
+                '<div class="flex items-center justify-between"><span class="text-slate-300 truncate max-w-[170px] font-medium">' + esc(name) + '</span>' + status + '</div>' +
+                '<p class="text-[10px] text-slate-600 mt-0.5">' + esc(a.source) + (a.sku ? ' \u00B7 ' + esc(a.sku) : '') + '</p>' +
+            '</div>';
         }).join('') : '<div class="flex flex-col items-center py-6 text-slate-600"><svg class="w-6 h-6 mb-2 text-emerald-500/30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p class="text-xs">All stock levels healthy</p></div>';
 
-        return `<div class="glass p-5">
-            <div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-200">Inventory Alerts</h2>${badge}</div>
-            <div class="space-y-2 max-h-44 overflow-y-auto">${items}</div>
-        </div>`;
+        return '<div class="glass p-5">' +
+            '<div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-200">Inventory Alerts</h2>' + badge + '</div>' +
+            '<div class="space-y-2 max-h-52 overflow-y-auto">' + items + '</div>' +
+        '</div>';
     }
 
     // ── Meta Campaigns ──
     function buildCampaigns() {
-        const camps = (DATA.meta_campaigns || []).filter(c => c.spend > 0).slice(0, 5);
-        const items = camps.length > 0 ? camps.map(c => {
-            const roasColor = c.roas >= 2 ? 'text-emerald-400' : c.roas > 0 ? 'text-amber-400' : 'text-slate-600';
-            const roasText = c.roas > 0 ? c.roas.toFixed(1) + 'x ROAS' : 'No sales';
-            return `<div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs hover:bg-white/[0.04] transition-colors">
-                <p class="text-slate-300 truncate font-medium">${esc(c.name)}</p>
-                <div class="flex items-center gap-3 mt-1.5 text-[10px] font-mono text-slate-500">
-                    <span>$${c.spend.toFixed(2)}</span>
-                    <span class="${roasColor}">${roasText}</span>
-                    <span>${c.purchases} sales</span>
-                </div>
-            </div>`;
+        var camps = (DATA.meta_campaigns || []).filter(function(c) { return c.spend > 0; }).slice(0, 5);
+        var items = camps.length > 0 ? camps.map(function(c) {
+            var roasColor = c.roas >= 2 ? 'text-emerald-400' : c.roas > 0 ? 'text-amber-400' : 'text-slate-600';
+            var roasText = c.roas > 0 ? c.roas.toFixed(1) + 'x ROAS' : 'No sales';
+            return '<div class="px-3 py-2.5 rounded-lg bg-white/[0.02] text-xs hover:bg-white/[0.04] transition-colors">' +
+                '<p class="text-slate-300 truncate font-medium">' + esc(c.name) + '</p>' +
+                '<div class="flex items-center gap-3 mt-1.5 text-[10px] font-mono text-slate-500">' +
+                    '<span>$' + c.spend.toFixed(2) + '</span>' +
+                    '<span class="' + roasColor + '">' + roasText + '</span>' +
+                    '<span>' + c.purchases + ' sales</span>' +
+                '</div>' +
+            '</div>';
         }).join('') : '<div class="flex flex-col items-center py-6 text-slate-600"><p class="text-xs">No active campaigns</p></div>';
 
-        return `<div class="glass p-5">
-            <div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-200">Meta Campaigns</h2><span class="text-[10px] font-mono text-slate-500">${camps.length} active</span></div>
-            <div class="space-y-2 max-h-44 overflow-y-auto">${items}</div>
-        </div>`;
+        return '<div class="glass p-5">' +
+            '<div class="flex items-center justify-between mb-3"><h2 class="text-sm font-semibold text-slate-200">Meta Campaigns</h2><span class="text-[10px] font-mono text-slate-500">' + camps.length + ' active</span></div>' +
+            '<div class="space-y-2 max-h-52 overflow-y-auto">' + items + '</div>' +
+        '</div>';
     }
 
     // ── Channel Split Legend ──
     function buildChannelLegend() {
-        const pcts = DATA.channel_pct || {};
-        return Object.entries(pcts).map(([ch, pct]) => {
-            const color = ch === 'Shopify' ? 'bg-purple-400' : ch === 'Amazon US' ? 'bg-cyan-400' : 'bg-pink-400';
-            return `<div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ${color}"></span><span class="text-slate-400">${ch}</span></div><span class="font-mono text-slate-300">${pct}%</span></div>`;
+        var pcts = DATA.channel_pct || {};
+        return Object.keys(pcts).map(function(ch) {
+            var pct = pcts[ch];
+            var color = ch === 'Shopify' ? 'bg-purple-400' : ch === 'Amazon US' ? 'bg-cyan-400' : 'bg-pink-400';
+            return '<div class="flex items-center justify-between text-xs"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ' + color + '"></span><span class="text-slate-400">' + ch + '</span></div><span class="font-mono text-slate-300">' + pct + '%</span></div>';
         }).join('');
+    }
+
+    // ── #15 Mini Calendar Heatmap ──
+    function buildHeatmap() {
+        var series = DATA.daily_series || {};
+        var dates = Object.keys(series).sort();
+        if (dates.length === 0) return '';
+
+        // Calculate daily totals
+        var dailyTotals = {};
+        var maxRev = 0;
+        dates.forEach(function(d) {
+            var day = series[d];
+            var total = (day.shopify || 0) + (day.amazon_us || 0) + (day.amazon_uk || 0);
+            dailyTotals[d] = total;
+            if (total > maxRev) maxRev = total;
+        });
+
+        // Color intensity function
+        function cellColor(val) {
+            if (maxRev === 0) return 'rgba(139,92,246,0.05)';
+            var intensity = val / maxRev;
+            if (intensity < 0.15) return 'rgba(139,92,246,0.06)';
+            if (intensity < 0.35) return 'rgba(139,92,246,0.15)';
+            if (intensity < 0.55) return 'rgba(139,92,246,0.3)';
+            if (intensity < 0.75) return 'rgba(139,92,246,0.5)';
+            return 'rgba(139,92,246,0.75)';
+        }
+
+        // Build a 5-week x 7-day grid, most recent date on the right
+        // Pad to fill complete weeks
+        var lastDate = new Date(dates[dates.length - 1] + 'T00:00:00');
+        var dayOfWeek = lastDate.getDay(); // 0=Sun
+        var totalCells = 35; // 5 weeks x 7 days
+        var startOffset = totalCells - dates.length - (6 - dayOfWeek);
+
+        var cells = [];
+        for (var i = 0; i < totalCells; i++) {
+            var dateIdx = i - Math.max(0, startOffset);
+            var dateStr = dateIdx >= 0 && dateIdx < dates.length ? dates[dateIdx] : null;
+            var val = dateStr ? dailyTotals[dateStr] || 0 : 0;
+            var bg = dateStr ? cellColor(val) : 'rgba(255,255,255,0.02)';
+            var title = dateStr ? dateStr + ': $' + val.toFixed(0) : '';
+            cells.push('<div class="heatmap-cell" style="background:' + bg + ';" title="' + title + '"></div>');
+        }
+
+        // Arrange into columns (weeks)
+        var weeks = [];
+        for (var w = 0; w < 5; w++) {
+            var weekCells = '';
+            for (var d = 0; d < 7; d++) {
+                weekCells += cells[w * 7 + d];
+            }
+            weeks.push('<div class="flex flex-col gap-[3px]">' + weekCells + '</div>');
+        }
+
+        var dayLabels = '<div class="flex flex-col gap-[3px] mr-1.5 text-[8px] font-mono text-slate-600">' +
+            '<div style="height:14px;line-height:14px;">S</div><div style="height:14px;line-height:14px;">M</div><div style="height:14px;line-height:14px;">T</div><div style="height:14px;line-height:14px;">W</div><div style="height:14px;line-height:14px;">T</div><div style="height:14px;line-height:14px;">F</div><div style="height:14px;line-height:14px;">S</div>' +
+            '</div>';
+
+        // Legend
+        var legend = '<div class="flex items-center gap-1 mt-3 text-[9px] text-slate-600 font-mono">' +
+            '<span>Less</span>' +
+            '<div class="heatmap-cell" style="background:rgba(139,92,246,0.06);width:10px;height:10px;"></div>' +
+            '<div class="heatmap-cell" style="background:rgba(139,92,246,0.15);width:10px;height:10px;"></div>' +
+            '<div class="heatmap-cell" style="background:rgba(139,92,246,0.3);width:10px;height:10px;"></div>' +
+            '<div class="heatmap-cell" style="background:rgba(139,92,246,0.5);width:10px;height:10px;"></div>' +
+            '<div class="heatmap-cell" style="background:rgba(139,92,246,0.75);width:10px;height:10px;"></div>' +
+            '<span>More</span></div>';
+
+        return '<div class="glass p-5">' +
+            '<h2 class="text-sm font-semibold text-slate-200 mb-3">Daily Revenue Heatmap</h2>' +
+            '<div class="flex items-start">' +
+                dayLabels +
+                '<div class="flex gap-[3px]">' + weeks.join('') + '</div>' +
+            '</div>' +
+            legend +
+        '</div>';
     }
 
     // ── Sources Footer ──
     function buildSources() {
-        const sources = DATA.sources || {};
-        const dots = Object.entries(sources).map(([name, ok]) =>
-            `<div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full ${ok ? 'bg-emerald-400' : 'bg-red-400'}"></div><span class="text-[10px] font-mono text-slate-600 uppercase tracking-wide">${name}</span></div>`
-        ).join('');
-        const ts = DATA.generated_at ? new Date(DATA.generated_at).toLocaleString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-        return `<div class="flex items-center justify-center gap-6 py-4 border-t border-white/[0.03]">${dots}<span class="text-[10px] text-slate-700 font-mono">Updated ${ts}</span></div>`;
+        var sources = DATA.sources || {};
+        var dots = Object.keys(sources).map(function(name) {
+            var ok = sources[name];
+            return '<div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full ' + (ok ? 'bg-emerald-400' : 'bg-red-400') + '"></div><span class="text-[10px] font-mono text-slate-600 uppercase tracking-wide">' + name + '</span></div>';
+        }).join('');
+        var ts = DATA.generated_at ? new Date(DATA.generated_at).toLocaleString('en-GB', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+        return '<div class="flex items-center justify-center gap-6 py-4 border-t border-white/[0.03]">' + dots + '<span class="text-[10px] text-slate-700 font-mono">Updated ' + ts + '</span></div>';
     }
 
     // ── Total Revenue ──
     function totalRev() {
-        const bd = DATA.channel_breakdown || {};
-        const t = Object.values(bd).reduce((s,v) => s+v, 0);
+        var bd = DATA.channel_breakdown || {};
+        var t = Object.values(bd).reduce(function(s,v) { return s+v; }, 0);
         return t >= 1000 ? '$' + (t/1000).toFixed(1) + 'k' : '$' + t.toFixed(0);
     }
 
+    // ── #12 Date Range ──
+    function buildDateRange() {
+        if (!DATA.generated_at) return;
+        var end = new Date(DATA.generated_at);
+        var start = new Date(end);
+        start.setDate(start.getDate() - (DATA.period_days || 30));
+        var opts = {month: 'short', day: 'numeric'};
+        var el = document.getElementById('date-range');
+        if (el) el.textContent = start.toLocaleDateString('en-US', opts) + ' \u2013 ' + end.toLocaleDateString('en-US', opts);
+    }
+
     // ── Render ──
-    const content = document.getElementById('dashboard-content');
-    const revenueIcon = 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
-    const efficiencyIcon = 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z';
-    const healthIcon = 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z';
+    var content = document.getElementById('dashboard-content');
+    var revenueIcon = 'M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
+    var efficiencyIcon = 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z';
+    var healthIcon = 'M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z';
 
-    content.innerHTML = `
-        ${buildKpiRow('Revenue', revenueIcon, 'text-purple-400', 'revenue')}
-        ${buildKpiRow('Efficiency', efficiencyIcon, 'text-cyan-400', 'efficiency')}
-        ${buildKpiRow('Health', healthIcon, 'text-pink-400', 'health')}
+    content.innerHTML =
+        buildPulseSummary() +
+        buildKpiRow('Revenue', revenueIcon, 'text-purple-400', 'revenue') +
+        buildKpiRow('Efficiency', efficiencyIcon, 'text-cyan-400', 'efficiency') +
+        buildKpiRow('Health', healthIcon, 'text-pink-400', 'health') +
 
-        <div class="grid grid-cols-3 gap-4 chart-row">
-            <div class="col-span-2 glass p-5">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-semibold text-slate-200">Revenue by Channel</h2>
-                    <div class="flex items-center gap-5 text-[11px]">
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-purple-400 inline-block"></span><span class="text-slate-400">Shopify</span></span>
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-cyan-400 inline-block"></span><span class="text-slate-400">Amazon US</span></span>
-                        <span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-pink-400 inline-block"></span><span class="text-slate-400">Amazon UK</span></span>
-                    </div>
-                </div>
-                <div class="relative h-60"><canvas id="revenueChart"></canvas></div>
-            </div>
-            <div class="glass p-5">
-                <h2 class="text-sm font-semibold text-slate-200 mb-4">Channel Split</h2>
-                <div class="relative h-48 flex items-center justify-center">
-                    <canvas id="channelChart"></canvas>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span class="text-[10px] text-slate-500 font-mono">TOTAL</span>
-                        <span class="text-lg font-bold font-mono text-white">${totalRev()}</span>
-                    </div>
-                </div>
-                <div class="mt-4 space-y-2.5">${buildChannelLegend()}</div>
-            </div>
-        </div>
+        '<div class="grid grid-cols-3 gap-4 chart-row">' +
+            '<div class="col-span-2 glass p-5">' +
+                '<div class="flex items-center justify-between mb-4">' +
+                    '<h2 class="text-sm font-semibold text-slate-200">Revenue by Channel</h2>' +
+                    '<div class="flex items-center gap-5 text-[11px]">' +
+                        '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-purple-400 inline-block"></span><span class="text-slate-400">Shopify</span></span>' +
+                        '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-cyan-400 inline-block"></span><span class="text-slate-400">Amazon US</span></span>' +
+                        '<span class="flex items-center gap-1.5"><span class="w-3 h-[3px] rounded-full bg-pink-400 inline-block"></span><span class="text-slate-400">Amazon UK</span></span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="relative h-60"><canvas id="revenueChart"></canvas></div>' +
+            '</div>' +
+            '<div class="glass p-5">' +
+                '<h2 class="text-sm font-semibold text-slate-200 mb-4">Channel Split</h2>' +
+                '<div class="relative h-56 flex items-center justify-center">' +
+                    '<canvas id="channelChart"></canvas>' +
+                    '<div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">' +
+                        '<span class="text-[10px] text-slate-500 font-mono">TOTAL</span>' +
+                        '<span class="text-xl font-bold font-mono text-white">' + totalRev() + '</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="mt-4 space-y-2.5">' + buildChannelLegend() + '</div>' +
+            '</div>' +
+        '</div>' +
 
-        <div class="grid grid-cols-3 gap-4 bottom-row">
-            ${buildProductsTable()}
-            <div class="space-y-4">
-                ${buildAlerts()}
-                ${buildCampaigns()}
-            </div>
-        </div>
+        '<div class="grid grid-cols-3 gap-4 products-row">' +
+            buildProductsTable() +
+            '<div class="space-y-4">' +
+                buildAlerts() +
+                buildCampaigns() +
+            '</div>' +
+        '</div>' +
 
-        ${buildSources()}
-    `;
+        buildBottomProducts() +
+
+        '<div class="grid grid-cols-2 gap-4">' +
+            buildHeatmap() +
+            '<div></div>' +
+        '</div>' +
+
+        buildSources();
+
+    // ── #12 Set date range ──
+    buildDateRange();
 
     // ── Charts ──
-    const series = DATA.daily_series || {};
-    const dates = Object.keys(series).sort();
-    const shortDates = dates.map(d => { const dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'}); });
+    var series = DATA.daily_series || {};
+    var dates = Object.keys(series).sort();
+    var shortDates = dates.map(function(d) { var dt = new Date(d + 'T00:00:00'); return dt.toLocaleDateString('en-US', {month:'short', day:'numeric'}); });
 
-    const mkDataset = (label, key, color, alpha) => ({
-        label, data: dates.map(d => series[d]?.[key] || 0),
-        borderColor: color, backgroundColor: color.slice(0,-1) + ', ' + alpha + ')',
-        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
-        pointHoverRadius: 5, pointHoverBackgroundColor: color, pointHoverBorderColor: '#000', pointHoverBorderWidth: 2,
-    });
+    var ttipStyle = { backgroundColor: 'rgba(0,0,0,0.95)', borderColor: 'rgba(139,92,246,0.2)', borderWidth: 1, titleColor: '#fff', bodyColor: '#94a3b8', titleFont: {family:'Fira Sans',size:12,weight:600}, bodyFont: {family:'Fira Code',size:11}, padding: 12, cornerRadius: 8 };
 
-    const ttipStyle = { backgroundColor: 'rgba(0,0,0,0.9)', borderColor: 'rgba(139,92,246,0.2)', borderWidth: 1, titleColor: '#fff', bodyColor: '#94a3b8', titleFont: {family:'Fira Sans',size:12,weight:600}, bodyFont: {family:'Fira Code',size:11}, padding: 12, cornerRadius: 8 };
-
+    // ── #6 Revenue chart with gradient fills ──
     if (dates.length > 0) {
-        new Chart(document.getElementById('revenueChart'), {
+        var ctx = document.getElementById('revenueChart').getContext('2d');
+
+        function makeGradient(ctx, r, g, b) {
+            var grad = ctx.createLinearGradient(0, 0, 0, ctx.canvas.clientHeight);
+            grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ', 0.25)');
+            grad.addColorStop(0.5, 'rgba(' + r + ',' + g + ',' + b + ', 0.08)');
+            grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ', 0)');
+            return grad;
+        }
+
+        var shopifyGrad = makeGradient(ctx, 139, 92, 246);
+        var amazonUsGrad = makeGradient(ctx, 6, 182, 212);
+        var amazonUkGrad = makeGradient(ctx, 236, 72, 153);
+
+        new Chart(ctx, {
             type: 'line',
             data: {
                 labels: shortDates,
                 datasets: [
-                    mkDataset('Shopify', 'shopify', 'rgb(139,92,246)', 0.08),
-                    mkDataset('Amazon US', 'amazon_us', 'rgb(6,182,212)', 0.06),
-                    mkDataset('Amazon UK', 'amazon_uk', 'rgb(236,72,153)', 0.05),
+                    {
+                        label: 'Shopify',
+                        data: dates.map(function(d) { return series[d] ? series[d].shopify || 0 : 0; }),
+                        borderColor: 'rgb(139,92,246)', backgroundColor: shopifyGrad,
+                        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
+                        pointHoverRadius: 5, pointHoverBackgroundColor: 'rgb(139,92,246)', pointHoverBorderColor: '#000', pointHoverBorderWidth: 2,
+                    },
+                    {
+                        label: 'Amazon US',
+                        data: dates.map(function(d) { return series[d] ? series[d].amazon_us || 0 : 0; }),
+                        borderColor: 'rgb(6,182,212)', backgroundColor: amazonUsGrad,
+                        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
+                        pointHoverRadius: 5, pointHoverBackgroundColor: 'rgb(6,182,212)', pointHoverBorderColor: '#000', pointHoverBorderWidth: 2,
+                    },
+                    {
+                        label: 'Amazon UK',
+                        data: dates.map(function(d) { return series[d] ? series[d].amazon_uk || 0 : 0; }),
+                        borderColor: 'rgb(236,72,153)', backgroundColor: amazonUkGrad,
+                        fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
+                        pointHoverRadius: 5, pointHoverBackgroundColor: 'rgb(236,72,153)', pointHoverBorderColor: '#000', pointHoverBorderWidth: 2,
+                    }
                 ]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 interaction: {mode:'index', intersect:false},
-                plugins: { legend: {display:false}, tooltip: {...ttipStyle, displayColors:true, boxWidth:8, boxHeight:8, callbacks: { label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2})}` } } },
+                plugins: {
+                    legend: {display:false},
+                    tooltip: Object.assign({}, ttipStyle, {
+                        displayColors: true, boxWidth: 8, boxHeight: 8,
+                        callbacks: { label: function(ctx) { return ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US',{minimumFractionDigits:2}); } }
+                    })
+                },
                 scales: {
                     x: { ticks: {color:'#334155', font:{family:'Fira Sans',size:10}, maxRotation:0, maxTicksLimit:8}, grid: {color:'rgba(255,255,255,0.02)'}, border: {display:false} },
-                    y: { ticks: {color:'#334155', font:{family:'Fira Code',size:10}, callback: v => '$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}, grid: {color:'rgba(255,255,255,0.02)'}, border: {display:false} },
+                    y: { ticks: {color:'#334155', font:{family:'Fira Code',size:10}, callback: function(v) { return '$'+(v>=1000?(v/1000).toFixed(0)+'k':v); }}, grid: {color:'rgba(255,255,255,0.02)'}, border: {display:false} },
                 },
             }
         });
     }
 
-    const bd = DATA.channel_breakdown || {};
+    // ── #9 Larger donut chart ──
+    var bd = DATA.channel_breakdown || {};
     if (Object.keys(bd).length > 0) {
         new Chart(document.getElementById('channelChart'), {
             type: 'doughnut',
-            data: { labels: Object.keys(bd), datasets: [{ data: Object.values(bd), backgroundColor: ['#8b5cf6','#06b6d4','#ec4899'], borderColor: '#000', borderWidth: 3, hoverOffset: 8 }] },
-            options: { responsive: true, maintainAspectRatio: false, cutout: '72%', plugins: { legend: {display:false}, tooltip: {...ttipStyle, callbacks: { label: ctx => ` $${ctx.parsed.toLocaleString('en-US',{minimumFractionDigits:2})}` } } } },
+            data: {
+                labels: Object.keys(bd),
+                datasets: [{
+                    data: Object.values(bd),
+                    backgroundColor: ['#8b5cf6','#06b6d4','#ec4899'],
+                    borderColor: '#000', borderWidth: 3, hoverOffset: 12,
+                    hoverBorderColor: '#1a1a2e',
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                cutout: '68%',
+                plugins: {
+                    legend: {display:false},
+                    tooltip: Object.assign({}, ttipStyle, {
+                        callbacks: { label: function(ctx) { return ' $' + ctx.parsed.toLocaleString('en-US',{minimumFractionDigits:2}); } }
+                    })
+                },
+                animation: { animateScale: true, animateRotate: true },
+            },
         });
     }
 
     // ── Period buttons (visual only in static mode) ──
-    const sel = document.getElementById('period-selector');
-    ['7D','30D','90D','6M'].forEach((label, i) => {
-        const active = label === DATA.period_days + 'D' || (label === '6M' && DATA.period_days === 180);
-        const btn = document.createElement('button');
+    var sel = document.getElementById('period-selector');
+    ['7D','30D','90D','6M'].forEach(function(label) {
+        var active = label === DATA.period_days + 'D' || (label === '6M' && DATA.period_days === 180);
+        var btn = document.createElement('button');
         btn.textContent = label;
-        btn.className = `px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all ${active ? 'bg-purple-500/15 text-purple-400' : 'text-slate-500 hover:text-slate-300'}`;
+        btn.className = 'px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-all ' + (active ? 'bg-purple-500/15 text-purple-400' : 'text-slate-500 hover:text-slate-300');
         sel.appendChild(btn);
     });
 
