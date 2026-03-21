@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Photography Pipeline — Weeb Workshop</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0a;
+    --bg-card: rgba(20, 20, 28, 0.6);
+    --bg-elevated: rgba(26, 26, 36, 0.8);
+    --accent: #a78bfa;
+    --accent-bright: #c4b5fd;
+    --accent-dim: #7c3aed;
+    --accent-deep: #4c1d95;
+    --text: #f0f0f0;
+    --text-dim: #a1a1aa;
+    --text-muted: #52525b;
+    --success: #34d399;
+    --warm: #fbbf24;
+    --glass-border: rgba(255, 255, 255, 0.06);
+    --glass-bg: rgba(255, 255, 255, 0.03);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── Grain Overlay ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  /* ── Progress Bar ── */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent-dim), var(--accent), var(--accent-bright));
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
+    box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(167, 139, 250, 0.3);
+  }
+
+  /* ── Slide Counter ── */
+  .slide-counter {
+    position: fixed;
+    top: 24px;
+    right: 36px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    z-index: 100;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Deck ── */
+  .deck {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 80px 80px 60px;
+    opacity: 0;
+    transform: translateY(30px) scale(0.98);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    text-align: center;
+    will-change: transform, opacity;
+  }
+
+  .slide.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .slide.exit-up {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.98);
+  }
+
+  /* ── Typography ── */
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.8rem, 5.5vw, 5rem);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.8rem, 4vw, 3.2rem);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1rem, 1.8vw, 1.3rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: clamp(0.95rem, 1.8vw, 1.25rem);
+    color: var(--text-dim);
+    font-weight: 300;
+    line-height: 1.7;
+    max-width: 640px;
+  }
+
+  .accent { color: var(--accent); }
+  .accent-bright { color: var(--accent-bright); }
+  .warm { color: var(--warm); }
+  .green { color: var(--success); }
+
+  .label {
+    display: inline-block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    position: relative;
+    padding: 0 0 0 28px;
+  }
+
+  .label::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 18px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* ── Glassmorphism Card ── */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+  }
+
+  /* ── Ambient Glow ── */
+  .glow-orb {
+    position: fixed;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+    filter: blur(80px);
+  }
+
+  .glow-orb-1 {
+    width: 600px;
+    height: 600px;
+    top: -200px;
+    right: -150px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+  }
+
+  .glow-orb-2 {
+    width: 500px;
+    height: 500px;
+    bottom: -250px;
+    left: -100px;
+    background: radial-gradient(circle, rgba(167, 139, 250, 0.05) 0%, transparent 70%);
+  }
+
+  /* ── Stagger Animations ── */
+  .stagger-item {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .slide.active .stagger-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Delay classes generated via JS */
+
+  /* ════════════════════════════════════════
+     SLIDE 1: Title
+  ════════════════════════════════════════ */
+  .title-slide .main-title {
+    background: linear-gradient(135deg, #ffffff 0%, var(--accent) 50%, var(--accent-bright) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% 200%;
+    animation: gradient-shift 8s ease infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .title-slide .team-note {
+    margin-top: 48px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    color: var(--accent);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse-dot 2s ease infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 2: The Problem
+  ════════════════════════════════════════ */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    max-width: 960px;
+    margin-top: 36px;
+  }
+
+  .problem-card {
+    padding: 28px 20px;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .problem-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .problem-card .card-icon {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .problem-card h3 {
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .problem-card p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 3: The Solution
+  ════════════════════════════════════════ */
+  .solution-hero {
+    max-width: 700px;
+    margin-top: 32px;
+    padding: 40px 44px;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    border-color: rgba(167, 139, 250, 0.15);
+  }
+
+  .solution-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .solution-hero p {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    font-weight: 300;
+    color: var(--text-dim);
+    position: relative;
+  }
+
+  .solution-hero strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .cost-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(52, 211, 153, 0.1);
+    border: 1px solid rgba(52, 211, 153, 0.2);
+    color: var(--success);
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    margin-top: 20px;
+    position: relative;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 4: 8 Shot Types
+  ════════════════════════════════════════ */
+  .shots-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    max-width: 920px;
+    margin-top: 32px;
+  }
+
+  .shot-card {
+    padding: 24px 18px;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                border-color 0.35s ease,
+                box-shadow 0.35s ease;
+    cursor: default;
+  }
+
+  .shot-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+  }
+
+  .shot-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(167, 139, 250, 0.25);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+                0 0 30px rgba(167, 139, 250, 0.06);
+  }
+
+  .shot-card:hover::before { opacity: 1; }
+
+  .shot-card .card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .shot-card h3 {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+
+  .shot-card p {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  /* Unique border glow per card */
+  .shot-card:nth-child(1) { border-color: rgba(239, 68, 68, 0.12); }
+  .shot-card:nth-child(1):hover { border-color: rgba(239, 68, 68, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(239, 68, 68, 0.08); }
+  .shot-card:nth-child(2) { border-color: rgba(52, 211, 153, 0.12); }
+  .shot-card:nth-child(2):hover { border-color: rgba(52, 211, 153, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(52, 211, 153, 0.08); }
+  .shot-card:nth-child(3) { border-color: rgba(96, 165, 250, 0.12); }
+  .shot-card:nth-child(3):hover { border-color: rgba(96, 165, 250, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(96, 165, 250, 0.08); }
+  .shot-card:nth-child(4) { border-color: rgba(251, 191, 36, 0.12); }
+  .shot-card:nth-child(4):hover { border-color: rgba(251, 191, 36, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(251, 191, 36, 0.08); }
+  .shot-card:nth-child(5) { border-color: rgba(167, 139, 250, 0.12); }
+  .shot-card:nth-child(5):hover { border-color: rgba(167, 139, 250, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(167, 139, 250, 0.08); }
+  .shot-card:nth-child(6) { border-color: rgba(244, 114, 182, 0.12); }
+  .shot-card:nth-child(6):hover { border-color: rgba(244, 114, 182, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(244, 114, 182, 0.08); }
+  .shot-card:nth-child(7) { border-color: rgba(45, 212, 191, 0.12); }
+  .shot-card:nth-child(7):hover { border-color: rgba(45, 212, 191, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(45, 212, 191, 0.08); }
+  .shot-card:nth-child(8) { border-color: rgba(251, 146, 60, 0.12); }
+  .shot-card:nth-child(8):hover { border-color: rgba(251, 146, 60, 0.35); box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 30px rgba(251, 146, 60, 0.08); }
+
+  /* ════════════════════════════════════════
+     SLIDE 5: How It Works
+  ════════════════════════════════════════ */
+  .flow-container {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    max-width: 1000px;
+    margin-top: 40px;
+    position: relative;
+  }
+
+  .flow-node {
+    padding: 24px 20px;
+    text-align: center;
+    min-width: 160px;
+    flex: 1;
+    position: relative;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .flow-node:hover {
+    transform: translateY(-4px);
+    border-color: rgba(167, 139, 250, 0.3);
+  }
+
+  .flow-node .card-icon {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .flow-node h3 { font-size: 0.85rem; margin-bottom: 4px; }
+  .flow-node p { font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; }
+
+  .flow-connector {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  .flow-connector svg {
+    width: 32px;
+    height: 12px;
+  }
+
+  .flow-connector svg line,
+  .flow-connector svg polyline {
+    stroke: var(--accent-dim);
+    stroke-width: 1.5;
+    fill: none;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 6: What This Means For You
+  ════════════════════════════════════════ */
+  .role-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    max-width: 880px;
+    margin-top: 28px;
+    text-align: left;
+  }
+
+  .role-card {
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .role-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(167, 139, 250, 0.2);
+  }
+
+  .role-card .role-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .role-card h3 {
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .role-card p {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 7: How to Use It
+  ════════════════════════════════════════ */
+  .terminal {
+    max-width: 680px;
+    margin-top: 32px;
+    padding: 0;
+    overflow: hidden;
+    border-color: rgba(167, 139, 250, 0.12);
+  }
+
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .terminal-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .terminal-dot.r { background: #ef4444; }
+  .terminal-dot.y { background: #fbbf24; }
+  .terminal-dot.g { background: #34d399; }
+
+  .terminal-title {
+    margin-left: 8px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: 'Space Grotesk', monospace;
+  }
+
+  .terminal-body {
+    padding: 24px 28px;
+    text-align: left;
+  }
+
+  .terminal-line {
+    margin-bottom: 18px;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .terminal-line:last-child { margin-bottom: 0; }
+
+  .terminal-line .channel {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .terminal-line .user {
+    color: var(--success);
+    font-weight: 500;
+  }
+
+  .terminal-line .msg {
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .terminal-line .comment {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-style: normal;
+  }
+
+  .mention {
+    background: rgba(167, 139, 250, 0.15);
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-style: normal;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 8: Jesse's Workflow (Visual Pipeline)
+  ════════════════════════════════════════ */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    max-width: 960px;
+    margin-top: 36px;
+    position: relative;
+  }
+
+  .pipeline-stage {
+    flex: 1;
+    padding: 24px 16px;
+    text-align: center;
+    position: relative;
+    border-radius: 0;
+    border-right: none;
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+  }
+
+  .pipeline-stage:first-child { border-radius: 16px 0 0 16px; }
+  .pipeline-stage:last-child { border-radius: 0 16px 16px 0; }
+
+  .pipeline-inner {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 20px 14px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .pipeline-inner:hover {
+    transform: translateY(-4px);
+    border-color: rgba(167, 139, 250, 0.25);
+  }
+
+  .pipeline-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-dim), var(--accent-deep));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  .pipeline-stage .card-icon {
+    font-size: 1.4rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .pipeline-stage h3 {
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+
+  .pipeline-stage p {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  .pipeline-arrow {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 2px;
+  }
+
+  .pipeline-arrow svg {
+    width: 20px;
+    height: 12px;
+  }
+
+  .pipeline-arrow svg line,
+  .pipeline-arrow svg polyline {
+    stroke: var(--accent-dim);
+    stroke-width: 1.5;
+    fill: none;
+  }
+
+  .pipeline-conclusion {
+    margin-top: 28px;
+    padding: 20px 36px;
+    max-width: 600px;
+    text-align: center;
+    border-color: rgba(167, 139, 250, 0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pipeline-conclusion::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .pipeline-conclusion p {
+    font-size: 1.05rem;
+    font-weight: 500;
+    position: relative;
+    line-height: 1.5;
+  }
+
+  /* ════════════════════════════════════════
+     SLIDE 9: Summary
+  ════════════════════════════════════════ */
+  .stats-row {
+    display: flex;
+    gap: 40px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-item {
+    text-align: center;
+    min-width: 140px;
+  }
+
+  .stat-number {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent-bright));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-weight: 400;
+    max-width: 140px;
+  }
+
+  .final-cta {
+    margin-top: 48px;
+    padding: 18px 40px;
+    border-radius: 100px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text);
+    border-color: rgba(167, 139, 250, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .final-cta:hover {
+    border-color: rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 30px rgba(167, 139, 250, 0.1);
+  }
+
+  .final-cta::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .channel-link {
+    margin-top: 24px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  .channel-link span { color: var(--accent); font-weight: 500; }
+
+  /* ── Navigation ── */
+  .nav-btn {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(20, 20, 28, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 1.1rem;
+    cursor: pointer;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+  }
+
+  .nav-btn:hover {
+    background: rgba(124, 58, 237, 0.2);
+    border-color: rgba(167, 139, 250, 0.3);
+    color: var(--accent);
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .nav-btn.prev { left: 24px; }
+  .nav-btn.next { right: 24px; }
+
+  /* ── Nav Dots ── */
+  .nav-dots {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 100;
+  }
+
+  .nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    padding: 0;
+    opacity: 0.5;
+  }
+
+  .nav-dot.active {
+    background: var(--accent);
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.4);
+    transform: scale(1.4);
+  }
+
+  .nav-dot:hover { opacity: 0.8; }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    .slide { padding: 60px 28px 50px; }
+    .problem-grid { grid-template-columns: repeat(2, 1fr); }
+    .shots-grid { grid-template-columns: repeat(2, 1fr); }
+    .flow-container { flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .flow-connector { display: none; }
+    .role-grid { grid-template-columns: 1fr; }
+    .pipeline { flex-wrap: wrap; justify-content: center; gap: 8px; }
+    .pipeline-arrow { display: none; }
+    .stats-row { gap: 24px; }
+    .nav-btn { display: none; }
+  }
+
+  @media (max-width: 600px) {
+    .problem-grid { grid-template-columns: 1fr; }
+    .shots-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    h1 { font-size: clamp(2rem, 8vw, 3rem); }
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-orb glow-orb-1"></div>
+<div class="glow-orb glow-orb-2"></div>
+
+<div class="progress-bar" id="progressBar"></div>
+<div class="slide-counter" id="counter">01 / 09</div>
+
+<div class="deck" id="deck">
+
+  <!-- ═══ Slide 1: Title ═══ -->
+  <div class="slide title-slide active" data-slide="0">
+    <div class="badge stagger-item"><span class="dot"></span> Live Now</div>
+    <h1 class="main-title stagger-item">Studio-Quality Product<br>Shots in Minutes</h1>
+    <p class="subtitle stagger-item">AI-powered product photography that saves the team hours every week and makes everything look incredible.</p>
+    <p class="team-note stagger-item">Weeb Workshop &middot; March 2026</p>
+  </div>
+
+  <!-- ═══ Slide 2: The Problem ═══ -->
+  <div class="slide" data-slide="1">
+    <div class="label stagger-item">The Challenge</div>
+    <h2 class="stagger-item">Every Product Needs<br><span class="accent">Professional Imagery</span></h2>
+    <p class="subtitle stagger-item">And we have a lot of products.</p>
+    <div class="problem-grid">
+      <div class="problem-card glass stagger-item">
+        <span class="card-icon">&#x1F4F8;</span>
+        <h3>Volume</h3>
+        <p>Hero shots, lifestyle, flat lays, detail shots. Multiply by every product in every franchise.</p>
+      </div>
+      <div class="problem-card glass stagger-item">
+        <span class="card-icon">&#x23F3;</span>
+        <h3>Time</h3>
+        <p>Creating EBC images and product photography manually takes hours per product. That adds up fast.</p>
+      </div>
+      <div class="problem-card glass stagger-item">
+        <span class="card-icon">&#x1F4B8;</span>
+        <h3>Cost</h3>
+        <p>Professional photography is expensive and we'd need it constantly as new products launch.</p>
+      </div>
+      <div class="problem-card glass stagger-item">
+        <span class="card-icon">&#x1F6A7;</span>
+        <h3>Bottleneck</h3>
+        <p>Listings wait for images. Ads wait for creative. Social waits for content. Everything stalls.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 3: The Solution ═══ -->
+  <div class="slide" data-slide="2">
+    <div class="label stagger-item">The Solution</div>
+    <h2 class="stagger-item">AI-Generated Product<br><span class="accent">Photography</span></h2>
+    <div class="solution-hero glass stagger-item">
+      <p>Just <span class="mention">@hermes</span> in any Slack channel with a product name and it creates <strong class="accent">8 different shot types</strong> automatically. Hero shots, lifestyle, detail, everything.</p>
+      <br>
+      <p>Same dark, premium, anime-energy aesthetic we use everywhere. <strong>Consistent across every franchise.</strong></p>
+      <div class="cost-pill">&#x2713; Cost: Basically Free (Gemini API)</div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 4: 8 Shot Types ═══ -->
+  <div class="slide" data-slide="3">
+    <div class="label stagger-item">The System</div>
+    <h2 class="stagger-item">8 Shot Types, <span class="accent">Every Time</span></h2>
+    <p class="subtitle stagger-item">A complete set of product imagery, generated in minutes.</p>
+    <div class="shots-grid">
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F525;</span>
+        <h3>Hero</h3>
+        <p>Front-facing, dramatic lighting. The money shot.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F3E0;</span>
+        <h3>Lifestyle</h3>
+        <p>In-use, in-context. Shows the product in real life.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F50D;</span>
+        <h3>Detail</h3>
+        <p>Close-up textures and quality. Shows the craft.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F3A8;</span>
+        <h3>Flat Lay</h3>
+        <p>Top-down, beautifully arranged. Clean and editorial.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F4CF;</span>
+        <h3>Scale</h3>
+        <p>Size reference so customers know what they're getting.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F319;</span>
+        <h3>Mood</h3>
+        <p>Atmospheric, brand-feeling. Pure aesthetic energy.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F4D6;</span>
+        <h3>Editorial</h3>
+        <p>Magazine-style composition. Premium and polished.</p>
+      </div>
+      <div class="shot-card glass stagger-item">
+        <span class="card-icon">&#x1F381;</span>
+        <h3>Unboxing</h3>
+        <p>Packaging reveal. That first-impression moment.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 5: How It Works ═══ -->
+  <div class="slide" data-slide="4">
+    <div class="label stagger-item">The Flow</div>
+    <h2 class="stagger-item">Five Steps. <span class="accent">Dead Simple.</span></h2>
+    <div class="flow-container">
+      <div class="flow-node glass stagger-item">
+        <span class="card-icon">&#x1F3AF;</span>
+        <h3>Pick Product</h3>
+        <p>Any SKU, any franchise</p>
+      </div>
+      <div class="flow-connector stagger-item">
+        <svg viewBox="0 0 32 12"><line x1="0" y1="6" x2="26" y2="6"/><polyline points="22,2 28,6 22,10"/></svg>
+      </div>
+      <div class="flow-node glass stagger-item">
+        <span class="card-icon">&#x1F4AC;</span>
+        <h3>@hermes</h3>
+        <p>Mention in Slack</p>
+      </div>
+      <div class="flow-connector stagger-item">
+        <svg viewBox="0 0 32 12"><line x1="0" y1="6" x2="26" y2="6"/><polyline points="22,2 28,6 22,10"/></svg>
+      </div>
+      <div class="flow-node glass stagger-item">
+        <span class="card-icon">&#x1F916;</span>
+        <h3>AI Generates</h3>
+        <p>8 shot types created</p>
+      </div>
+      <div class="flow-connector stagger-item">
+        <svg viewBox="0 0 32 12"><line x1="0" y1="6" x2="26" y2="6"/><polyline points="22,2 28,6 22,10"/></svg>
+      </div>
+      <div class="flow-node glass stagger-item">
+        <span class="card-icon">&#x1F441;</span>
+        <h3>Jesse Reviews</h3>
+        <p>Picks the best ones</p>
+      </div>
+      <div class="flow-connector stagger-item">
+        <svg viewBox="0 0 32 12"><line x1="0" y1="6" x2="26" y2="6"/><polyline points="22,2 28,6 22,10"/></svg>
+      </div>
+      <div class="flow-node glass stagger-item">
+        <span class="card-icon">&#x1F680;</span>
+        <h3>Ship It</h3>
+        <p>Amazon, Shopify, ads</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 6: What This Means For You ═══ -->
+  <div class="slide" data-slide="5">
+    <div class="label stagger-item">For the Team</div>
+    <h2 class="stagger-item">What This Means <span class="accent">For You</span></h2>
+    <div class="role-grid">
+      <div class="role-card glass stagger-item">
+        <span class="role-label">Jesse &mdash; Art Director</span>
+        <h3>From hours to minutes</h3>
+        <p>Generate base shots instantly. Pick the best, add your magic. You're directing the creative vision now, not grinding production. Way more time for the work that actually excites you.</p>
+      </div>
+      <div class="role-card glass stagger-item">
+        <span class="role-label">Edhel &mdash; Ops & Growth</span>
+        <h3>Listings never wait for images</h3>
+        <p>Every product gets fresh, consistent imagery right when you need it. No more "waiting on photos" before a listing goes live. Everything looks professional from day one.</p>
+      </div>
+      <div class="role-card glass stagger-item">
+        <span class="role-label">Wilbert &mdash; Ads & PPC</span>
+        <h3>Test 20 creatives, not 3</h3>
+        <p>Need ad creative variations? Generate as many as you want. Different angles, moods, contexts. Find what converts without being limited by asset count.</p>
+      </div>
+      <div class="role-card glass stagger-item">
+        <span class="role-label">Shar &mdash; Content & Social</span>
+        <h3>Beautiful imagery on demand</h3>
+        <p>Social content with pro product shots whenever you need them. Mix with UGC for variety. No more working around limited assets.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 7: How to Use It ═══ -->
+  <div class="slide" data-slide="6">
+    <div class="label stagger-item">Try It</div>
+    <h2 class="stagger-item">Just <span class="accent">@hermes</span> in Slack</h2>
+    <p class="subtitle stagger-item">That's genuinely it. Here's what it looks like:</p>
+    <div class="terminal glass stagger-item">
+      <div class="terminal-header">
+        <div class="terminal-dot r"></div>
+        <div class="terminal-dot y"></div>
+        <div class="terminal-dot g"></div>
+        <span class="terminal-title">#product</span>
+      </div>
+      <div class="terminal-body">
+        <div class="terminal-line">
+          <span class="channel">#product</span> &middot; <span class="user">You</span><br>
+          <span class="msg">"<span class="mention">@hermes</span> generate product shots for the Luffy keychain"</span>
+        </div>
+        <div class="terminal-line">
+          <span class="channel">#design-references</span> &middot; <span class="user">You</span><br>
+          <span class="msg">"<span class="mention">@hermes</span> generate shots for the Nezuko set in our brand style"</span>
+        </div>
+        <div class="terminal-line">
+          <span class="channel">#shopify</span> &middot; <span class="user">You</span><br>
+          <span class="msg">"<span class="mention">@hermes</span> create product photos for SKU-WK-042, dark moody aesthetic"</span>
+        </div>
+        <div class="terminal-line" style="margin-bottom: 0;">
+          <span class="comment">Brand defaults apply automatically. Add style notes if you want something specific.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 8: Jesse's Pipeline ═══ -->
+  <div class="slide" data-slide="7">
+    <div class="label stagger-item">Jesse's Pipeline</div>
+    <h2 class="stagger-item">Art Director <span class="accent">Workflow</span></h2>
+    <p class="subtitle stagger-item">Less grinding, more creating. Here's the new pipeline:</p>
+    <div class="pipeline">
+      <div class="pipeline-stage stagger-item">
+        <div class="pipeline-inner">
+          <div class="pipeline-num">1</div>
+          <span class="card-icon">&#x1F916;</span>
+          <h3>AI Generates</h3>
+          <p>8 shot types per product, done in minutes</p>
+        </div>
+      </div>
+      <div class="pipeline-arrow stagger-item">
+        <svg viewBox="0 0 20 12"><line x1="0" y1="6" x2="15" y2="6"/><polyline points="12,2 18,6 12,10"/></svg>
+      </div>
+      <div class="pipeline-stage stagger-item">
+        <div class="pipeline-inner">
+          <div class="pipeline-num">2</div>
+          <span class="card-icon">&#x1F441;</span>
+          <h3>Jesse Reviews</h3>
+          <p>Look through the set, spot the winners</p>
+        </div>
+      </div>
+      <div class="pipeline-arrow stagger-item">
+        <svg viewBox="0 0 20 12"><line x1="0" y1="6" x2="15" y2="6"/><polyline points="12,2 18,6 12,10"/></svg>
+      </div>
+      <div class="pipeline-stage stagger-item">
+        <div class="pipeline-inner">
+          <div class="pipeline-num">3</div>
+          <span class="card-icon">&#x2B50;</span>
+          <h3>Pick Top 3-4</h3>
+          <p>Best composition, lighting, and feel</p>
+        </div>
+      </div>
+      <div class="pipeline-arrow stagger-item">
+        <svg viewBox="0 0 20 12"><line x1="0" y1="6" x2="15" y2="6"/><polyline points="12,2 18,6 12,10"/></svg>
+      </div>
+      <div class="pipeline-stage stagger-item">
+        <div class="pipeline-inner">
+          <div class="pipeline-num">4</div>
+          <span class="card-icon">&#x1F3A8;</span>
+          <h3>Brand Polish</h3>
+          <p>Logos, color grading, Jesse's creative eye</p>
+        </div>
+      </div>
+      <div class="pipeline-arrow stagger-item">
+        <svg viewBox="0 0 20 12"><line x1="0" y1="6" x2="15" y2="6"/><polyline points="12,2 18,6 12,10"/></svg>
+      </div>
+      <div class="pipeline-stage stagger-item">
+        <div class="pipeline-inner" style="border-color: rgba(52, 211, 153, 0.2);">
+          <div class="pipeline-num" style="background: linear-gradient(135deg, #059669, #34d399);">5</div>
+          <span class="card-icon">&#x2705;</span>
+          <h3 class="green">Done</h3>
+          <p>Same quality, 1/4 the time</p>
+        </div>
+      </div>
+    </div>
+    <div class="pipeline-conclusion glass stagger-item">
+      <p>Jesse becomes the <span class="accent">Art Director</span>, not the production line. More creative freedom, better output, happier days.</p>
+    </div>
+  </div>
+
+  <!-- ═══ Slide 9: Summary ═══ -->
+  <div class="slide" data-slide="8">
+    <div class="label stagger-item">The Takeaway</div>
+    <h2 class="stagger-item">The Tool Does the Heavy Lifting.<br><span class="accent">The Team Brings the Taste.</span></h2>
+    <div class="stats-row">
+      <div class="stat-item stagger-item">
+        <div class="stat-number" data-target="8">0</div>
+        <p class="stat-label">Shot types per product</p>
+      </div>
+      <div class="stat-item stagger-item">
+        <div class="stat-number" data-target="75" data-suffix="%">0</div>
+        <p class="stat-label">Time saved per product</p>
+      </div>
+      <div class="stat-item stagger-item">
+        <div class="stat-number" data-target="0" data-prefix="$">$0</div>
+        <p class="stat-label">Extra cost per image</p>
+      </div>
+      <div class="stat-item stagger-item">
+        <div class="stat-number counter-infinite">&#x221E;</div>
+        <p class="stat-label">Creative possibilities</p>
+      </div>
+    </div>
+    <div class="final-cta glass stagger-item">
+      Just <span class="mention">@hermes</span> in any Slack channel and say "generate product shots for [product name]"
+    </div>
+    <p class="channel-link stagger-item">Questions? Ideas? Drop them in <span>#design-references</span> or just ask Hermes.</p>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<button class="nav-btn prev" onclick="changeSlide(-1)" aria-label="Previous slide">&#x2039;</button>
+<button class="nav-btn next" onclick="changeSlide(1)" aria-label="Next slide">&#x203A;</button>
+<div class="nav-dots" id="navDots"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progressBar = document.getElementById('progressBar');
+  const dotsContainer = document.getElementById('navDots');
+  let current = 0;
+  const total = slides.length;
+
+  // Create nav dots
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', 'Go to slide ' + (i + 1));
+    dot.addEventListener('click', () => goToSlide(i));
+    dotsContainer.appendChild(dot);
+  }
+
+  // Stagger animation setup
+  function applyStagger(slideEl) {
+    const items = slideEl.querySelectorAll('.stagger-item');
+    items.forEach((item, i) => {
+      item.style.transitionDelay = (i * 80) + 'ms';
+    });
+  }
+
+  // Reset stagger
+  function resetStagger(slideEl) {
+    const items = slideEl.querySelectorAll('.stagger-item');
+    items.forEach(item => {
+      item.style.transitionDelay = '0ms';
+    });
+  }
+
+  // Apply stagger to initial slide
+  applyStagger(slides[0]);
+
+  function goToSlide(n) {
+    if (n === current || n < 0 || n >= total) return;
+    const dir = n > current ? 1 : -1;
+
+    // Exit current
+    resetStagger(slides[current]);
+    slides[current].classList.remove('active');
+    slides[current].classList.add(dir > 0 ? 'exit-up' : '');
+
+    const prev = current;
+    current = n;
+
+    // Enter new
+    applyStagger(slides[current]);
+    slides[current].style.transition = 'none';
+    slides[current].style.transform = dir > 0 ? 'translateY(30px) scale(0.98)' : 'translateY(-30px) scale(0.98)';
+    slides[current].offsetHeight; // reflow
+    slides[current].style.transition = '';
+    slides[current].classList.add('active');
+
+    // Cleanup
+    setTimeout(() => {
+      slides[prev].classList.remove('exit-up');
+    }, 600);
+
+    updateUI();
+
+    // Trigger number counters on slide 9
+    if (current === 8) animateCounters();
+  }
+
+  function changeSlide(dir) {
+    const next = current + dir;
+    if (next >= 0 && next < total) goToSlide(next);
+  }
+
+  function updateUI() {
+    const num = String(current + 1).padStart(2, '0');
+    const tot = String(total).padStart(2, '0');
+    counter.textContent = num + ' / ' + tot;
+
+    progressBar.style.width = ((current + 1) / total * 100) + '%';
+
+    document.querySelectorAll('.nav-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  // Number counter animation
+  function animateCounters() {
+    document.querySelectorAll('.stat-number[data-target]').forEach(el => {
+      const target = parseInt(el.dataset.target);
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      const duration = 1200;
+      const start = performance.now();
+
+      function tick(now) {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        const val = Math.round(target * eased);
+        el.textContent = prefix + val + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // Keyboard nav
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+      e.preventDefault();
+      changeSlide(1);
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      changeSlide(-1);
+    }
+    if (e.key === 'Home') { e.preventDefault(); goToSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); goToSlide(total - 1); }
+  });
+
+  // Touch/swipe
+  let touchStartX = 0;
+  let touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  });
+  document.addEventListener('touchend', (e) => {
+    const dx = touchStartX - e.changedTouches[0].clientX;
+    const dy = touchStartY - e.changedTouches[0].clientY;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      changeSlide(dx > 0 ? 1 : -1);
+    }
+  });
+
+  // Click to advance (only on non-interactive areas)
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.nav-btn, .nav-dot, .terminal, .glass, button, a')) return;
+    const x = e.clientX;
+    if (x > window.innerWidth * 0.65) changeSlide(1);
+    else if (x < window.innerWidth * 0.35) changeSlide(-1);
+  });
+
+  // Initialize
+  updateUI();
+</script>
+
+</body>
+</html>

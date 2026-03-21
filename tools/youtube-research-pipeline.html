@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your New Research Superpower — Hermes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+  :root{
+    --bg:#0a0a0a;
+    --bg-card:rgba(255,255,255,0.03);
+    --bg-card-hover:rgba(255,255,255,0.06);
+    --border:rgba(255,255,255,0.06);
+    --border-hover:rgba(167,139,250,0.3);
+    --accent:#a78bfa;
+    --accent-dim:rgba(167,139,250,0.15);
+    --accent-glow:rgba(167,139,250,0.08);
+    --text:#e8e8ed;
+    --text-dim:#8a8a9a;
+    --text-muted:#555566;
+    --success:#34d399;
+    --warm:#fbbf24;
+    --font-display:'Space Grotesk',sans-serif;
+    --font-body:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+
+  html,body{
+    height:100%;width:100%;
+    font-family:var(--font-body);
+    background:var(--bg);
+    color:var(--text);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* ---- GRAIN OVERLAY ---- */
+  body::before{
+    content:'';
+    position:fixed;inset:0;
+    z-index:9999;
+    pointer-events:none;
+    opacity:0.035;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat:repeat;
+    background-size:200px 200px;
+  }
+
+  /* ---- PROGRESS BAR ---- */
+  .progress-bar{
+    position:fixed;top:0;left:0;
+    height:2px;
+    background:linear-gradient(90deg,var(--accent),#c4b5fd);
+    z-index:1000;
+    transition:width 0.6s cubic-bezier(0.22,1,0.36,1);
+    box-shadow:0 0 12px rgba(167,139,250,0.4);
+  }
+
+  /* ---- SLIDESHOW ---- */
+  .slideshow{position:relative;width:100%;height:100%}
+
+  .slide{
+    position:absolute;inset:0;
+    display:flex;flex-direction:column;
+    justify-content:center;align-items:center;
+    padding:60px 80px;
+    opacity:0;
+    transform:translateY(30px) scale(0.98);
+    transition:opacity 0.6s cubic-bezier(0.22,1,0.36,1),transform 0.6s cubic-bezier(0.22,1,0.36,1);
+    pointer-events:none;
+    text-align:center;
+  }
+  .slide.active{
+    opacity:1;
+    transform:translateY(0) scale(1);
+    pointer-events:auto;
+  }
+
+  /* ---- STAGGERED CHILDREN ---- */
+  .slide .stagger{
+    opacity:0;
+    transform:translateY(20px);
+    transition:opacity 0.5s ease,transform 0.5s ease;
+  }
+  .slide.active .stagger{
+    opacity:1;
+    transform:translateY(0);
+  }
+  .slide.active .stagger:nth-child(1){transition-delay:0.1s}
+  .slide.active .stagger:nth-child(2){transition-delay:0.25s}
+  .slide.active .stagger:nth-child(3){transition-delay:0.4s}
+  .slide.active .stagger:nth-child(4){transition-delay:0.55s}
+  .slide.active .stagger:nth-child(5){transition-delay:0.7s}
+  .slide.active .stagger:nth-child(6){transition-delay:0.85s}
+
+  /* ---- COUNTER ---- */
+  .counter{
+    position:fixed;bottom:28px;right:36px;
+    font-family:var(--font-body);
+    font-size:12px;letter-spacing:2px;
+    color:var(--text-muted);
+    font-weight:500;
+    z-index:100;
+    text-transform:uppercase;
+  }
+
+  /* ---- NAV DOTS ---- */
+  .nav-dots{
+    position:fixed;bottom:28px;left:50%;
+    transform:translateX(-50%);
+    display:flex;gap:8px;z-index:100;
+  }
+  .nav-dots .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:var(--text-muted);
+    cursor:pointer;transition:all 0.4s cubic-bezier(0.22,1,0.36,1);
+  }
+  .nav-dots .dot.active{
+    background:var(--accent);
+    box-shadow:0 0 8px rgba(167,139,250,0.5);
+    transform:scale(1.5);
+  }
+
+  /* ---- NAV ARROWS ---- */
+  .nav-arrow{
+    position:fixed;top:50%;transform:translateY(-50%);
+    width:48px;height:48px;
+    background:transparent;
+    border:1px solid var(--border);
+    border-radius:50%;
+    color:var(--text-muted);font-size:16px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all 0.3s ease;z-index:100;
+    backdrop-filter:blur(4px);
+  }
+  .nav-arrow:hover{
+    border-color:var(--accent);
+    color:var(--accent);
+    background:var(--accent-dim);
+    box-shadow:0 0 20px rgba(167,139,250,0.15);
+  }
+  .nav-arrow.left{left:24px}
+  .nav-arrow.right{right:24px}
+
+  /* ---- TYPOGRAPHY ---- */
+  .display{
+    font-family:var(--font-display);
+    font-size:clamp(2.5rem,6vw,5.5rem);
+    font-weight:700;
+    line-height:1.05;
+    letter-spacing:-0.03em;
+    margin-bottom:20px;
+  }
+  h2{
+    font-family:var(--font-display);
+    font-size:clamp(1.8rem,4vw,3.2rem);
+    font-weight:600;
+    line-height:1.1;
+    letter-spacing:-0.02em;
+    margin-bottom:20px;
+  }
+  h3{
+    font-family:var(--font-display);
+    font-size:clamp(1.2rem,2.5vw,1.8rem);
+    font-weight:500;
+    line-height:1.2;
+    margin-bottom:12px;
+  }
+  .subtitle{
+    font-size:clamp(1rem,1.8vw,1.35rem);
+    color:var(--text-dim);
+    font-weight:300;
+    line-height:1.7;
+    max-width:640px;
+  }
+  .accent{color:var(--accent)}
+  .warm{color:var(--warm)}
+  .green{color:var(--success)}
+  .tag{
+    display:inline-block;
+    font-family:var(--font-body);
+    font-size:11px;letter-spacing:2px;text-transform:uppercase;
+    color:var(--accent);
+    border:1px solid rgba(167,139,250,0.25);
+    padding:6px 16px;border-radius:100px;
+    margin-bottom:24px;font-weight:500;
+  }
+
+  /* ---- GLASS CARDS ---- */
+  .card-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:16px;
+    max-width:1000px;
+    width:100%;margin-top:32px;
+  }
+  .card{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:28px 24px;
+    text-align:left;
+    transition:all 0.4s cubic-bezier(0.22,1,0.36,1);
+    backdrop-filter:blur(8px);
+    position:relative;
+    overflow:hidden;
+  }
+  .card::before{
+    content:'';position:absolute;top:0;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(167,139,250,0.2),transparent);
+    opacity:0;transition:opacity 0.4s;
+  }
+  .card:hover{
+    border-color:var(--border-hover);
+    transform:translateY(-4px);
+    background:var(--bg-card-hover);
+    box-shadow:0 20px 40px rgba(0,0,0,0.3),0 0 0 1px rgba(167,139,250,0.1);
+  }
+  .card:hover::before{opacity:1}
+  .card-icon{
+    font-size:28px;margin-bottom:14px;display:block;
+    width:48px;height:48px;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--accent-dim);
+    border-radius:12px;
+  }
+  .card .name{
+    font-family:var(--font-display);
+    font-weight:600;font-size:16px;
+    margin-bottom:8px;color:var(--text);
+  }
+  .card .scenario{
+    font-size:14px;color:var(--accent);
+    font-weight:500;margin-bottom:10px;
+    line-height:1.5;
+  }
+  .card .result{
+    font-size:13px;color:var(--text-dim);
+    line-height:1.65;
+  }
+
+  /* ---- FLOW DIAGRAM ---- */
+  .flow-container{
+    display:flex;align-items:center;
+    gap:0;max-width:1000px;
+    flex-wrap:wrap;justify-content:center;
+    margin-top:40px;
+  }
+  .flow-node{
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+    padding:12px;
+    position:relative;
+  }
+  .flow-box{
+    width:72px;height:72px;
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;
+    transition:all 0.3s;
+    position:relative;
+  }
+  .flow-box::after{
+    content:'';position:absolute;inset:-1px;
+    border-radius:16px;
+    background:linear-gradient(135deg,rgba(167,139,250,0.15),transparent);
+    opacity:0;transition:opacity 0.3s;z-index:-1;
+  }
+  .flow-node:hover .flow-box{
+    border-color:var(--border-hover);
+    transform:scale(1.08);
+  }
+  .flow-node:hover .flow-box::after{opacity:1}
+  .flow-label{
+    font-size:12px;color:var(--text-dim);
+    font-weight:500;max-width:90px;
+    text-align:center;line-height:1.4;
+  }
+  .flow-connector{
+    width:40px;height:2px;
+    background:linear-gradient(90deg,var(--border),var(--accent),var(--border));
+    position:relative;margin-top:-20px;
+    opacity:0.5;
+  }
+  .flow-connector::after{
+    content:'';position:absolute;right:-3px;top:-3px;
+    width:0;height:0;
+    border-left:6px solid var(--accent);
+    border-top:4px solid transparent;
+    border-bottom:4px solid transparent;
+  }
+
+  /* ---- STATS ---- */
+  .stats-row{
+    display:flex;gap:48px;flex-wrap:wrap;
+    justify-content:center;margin-top:36px;
+  }
+  .stat{text-align:center}
+  .stat-value{
+    font-family:var(--font-display);
+    font-size:clamp(2rem,5vw,3.5rem);
+    font-weight:700;
+    letter-spacing:-0.02em;
+  }
+  .stat-label{
+    font-size:13px;color:var(--text-muted);
+    margin-top:6px;font-weight:400;
+    letter-spacing:0.5px;
+  }
+
+  /* ---- CODE BLOCK ---- */
+  .code-block{
+    background:rgba(167,139,250,0.06);
+    border:1px solid rgba(167,139,250,0.15);
+    border-radius:12px;
+    padding:20px 28px;
+    font-family:'SF Mono','Fira Code','Cascadia Code',monospace;
+    font-size:clamp(14px,1.6vw,18px);
+    color:var(--accent);
+    letter-spacing:0.5px;
+    display:inline-block;
+    margin:8px 0;
+    position:relative;
+  }
+  .code-block::before{
+    content:'$';
+    color:var(--text-muted);
+    margin-right:12px;
+    font-weight:300;
+  }
+
+  /* ---- INSTRUCTION PANEL ---- */
+  .panel{
+    background:var(--bg-card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:32px 36px;
+    max-width:640px;width:100%;
+    text-align:left;
+    backdrop-filter:blur(8px);
+    margin-top:28px;
+  }
+  .panel p{
+    font-size:15px;color:var(--text-dim);
+    line-height:1.75;margin-bottom:14px;
+  }
+  .panel p:last-child{margin-bottom:0}
+  .panel strong{color:var(--text);font-weight:600}
+
+  /* ---- BADGE ---- */
+  .badge-live{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:12px;letter-spacing:1.5px;text-transform:uppercase;
+    color:var(--success);font-weight:600;
+    padding:6px 14px;
+    border:1px solid rgba(52,211,153,0.2);
+    border-radius:100px;
+    margin-bottom:20px;
+  }
+  .badge-live::before{
+    content:'';width:6px;height:6px;
+    background:var(--success);border-radius:50%;
+    animation:pulse-dot 2s ease infinite;
+  }
+  @keyframes pulse-dot{
+    0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,211,153,0.4)}
+    50%{opacity:0.7;box-shadow:0 0 0 6px rgba(52,211,153,0)}
+  }
+
+  /* ---- GRADIENT TEXT ---- */
+  .gradient-text{
+    background:linear-gradient(135deg,var(--accent),#c4b5fd,#e9d5ff);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+
+  /* ---- PROOF CARD (for the "already working" slide) ---- */
+  .proof-card{
+    background:linear-gradient(135deg,rgba(167,139,250,0.05),rgba(52,211,153,0.03));
+    border:1px solid rgba(167,139,250,0.12);
+    border-radius:16px;
+    padding:32px;
+    max-width:580px;width:100%;
+    text-align:left;
+    margin-top:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .proof-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,rgba(52,211,153,0.3),transparent);
+  }
+  .proof-label{
+    font-size:11px;text-transform:uppercase;letter-spacing:2px;
+    color:var(--success);font-weight:600;margin-bottom:14px;
+  }
+  .proof-msg{
+    font-family:'SF Mono','Fira Code','Cascadia Code',monospace;
+    font-size:14px;color:var(--text-dim);line-height:1.7;
+  }
+  .proof-msg .user-tag{color:var(--accent);font-weight:500}
+  .proof-msg .bot-tag{color:var(--success);font-weight:500}
+
+  /* ---- ANIMATED COUNTER ---- */
+  .counter-value[data-target]{
+    font-family:var(--font-display);
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* ---- MOBILE ---- */
+  @media(max-width:768px){
+    .slide{padding:32px 24px}
+    .card-grid{grid-template-columns:1fr;gap:12px}
+    .flow-connector{width:20px}
+    .flow-box{width:56px;height:56px;font-size:22px}
+    .flow-label{font-size:11px;max-width:70px}
+    .stats-row{gap:24px}
+    .nav-arrow{width:40px;height:40px;font-size:14px}
+    .nav-arrow.left{left:12px}
+    .nav-arrow.right{right:12px}
+    .panel{padding:24px 20px}
+    .proof-card{padding:24px 20px}
+    .code-block{font-size:13px;padding:14px 18px}
+  }
+  @media(max-width:480px){
+    .display{font-size:2.2rem}
+    .flow-container{flex-direction:column;gap:0}
+    .flow-connector{
+      width:2px;height:24px;
+      background:linear-gradient(180deg,var(--border),var(--accent),var(--border));
+      margin:0;
+    }
+    .flow-connector::after{
+      right:auto;top:auto;bottom:-3px;left:-3px;
+      border-left:4px solid transparent;
+      border-right:4px solid transparent;
+      border-top:6px solid var(--accent);
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar" style="width:0%"></div>
+
+<div class="slideshow" id="slideshow">
+
+  <!-- ====== SLIDE 1: TITLE ====== -->
+  <div class="slide active" data-slide="0">
+    <div class="tag stagger">Introducing</div>
+    <h1 class="display stagger">Your Research<br><span class="gradient-text">Superpower</span></h1>
+    <p class="subtitle stagger">Hermes turns YouTube into your personal knowledge base. Stop watching hours of tutorials. Start using the insights in minutes.</p>
+    <div class="stagger" style="margin-top:40px;color:var(--text-muted);font-size:13px;letter-spacing:1px">
+      Use <span style="color:var(--accent)">arrow keys</span> or click to navigate
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 2: THE PROBLEM ====== -->
+  <div class="slide" data-slide="1">
+    <div class="tag stagger">The problem</div>
+    <h2 class="stagger">We've all been here</h2>
+    <p class="subtitle stagger">You need to learn something new. A Klaviyo flow, a Meta ad strategy, a photography technique. So you open YouTube...</p>
+    <div class="stats-row stagger">
+      <div class="stat">
+        <div class="stat-value warm counter-value" data-target="3" data-suffix=" hrs">0 hrs</div>
+        <div class="stat-label">Watching tutorials</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value warm">50%</div>
+        <div class="stat-label">Forgotten by tomorrow</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value warm counter-value" data-target="0" data-suffix="">0</div>
+        <div class="stat-label">Searchable notes</div>
+      </div>
+    </div>
+    <p class="subtitle stagger" style="margin-top:32px;font-size:15px;max-width:520px">
+      You end up with 20 tabs, scribbled notes, and a vague memory of "that one guy who said something useful."
+    </p>
+  </div>
+
+  <!-- ====== SLIDE 3: THE SOLUTION ====== -->
+  <div class="slide" data-slide="2">
+    <div class="tag stagger">The solution</div>
+    <h2 class="stagger">What if Hermes could<br><span class="accent">watch for you?</span></h2>
+    <p class="subtitle stagger">Give Hermes a topic or a creator's channel. It downloads the videos, transcribes every word, and pulls out the frameworks, templates, and lessons that actually matter.</p>
+    <div class="panel stagger" style="text-align:center">
+      <p style="font-size:17px;color:var(--text)">The result is a <span class="accent" style="font-weight:600">searchable knowledge document</span> you can come back to anytime.</p>
+      <p style="margin-bottom:0">No more rewatching. No more forgetting. Just the good stuff, organized and ready to use.</p>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 4: HOW IT WORKS (FLOW) ====== -->
+  <div class="slide" data-slide="3">
+    <div class="tag stagger">How it works</div>
+    <h2 class="stagger">Six steps. You only do the first one.</h2>
+    <div class="flow-container stagger">
+      <div class="flow-node">
+        <div class="flow-box">💬</div>
+        <div class="flow-label">You ask Hermes</div>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-node">
+        <div class="flow-box">🔍</div>
+        <div class="flow-label">Searches YouTube</div>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-node">
+        <div class="flow-box">📥</div>
+        <div class="flow-label">Downloads videos</div>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-node">
+        <div class="flow-box">📝</div>
+        <div class="flow-label">Extracts transcripts</div>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-node">
+        <div class="flow-box">🧠</div>
+        <div class="flow-label">Builds knowledge doc</div>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-node">
+        <div class="flow-box">🔎</div>
+        <div class="flow-label">Searchable forever</div>
+      </div>
+    </div>
+    <p class="subtitle stagger" style="margin-top:36px;font-size:15px">
+      <span class="green">Your part takes about 10 seconds.</span> Hermes does the rest.
+    </p>
+  </div>
+
+  <!-- ====== SLIDE 5: REAL EXAMPLES ====== -->
+  <div class="slide" data-slide="4">
+    <div class="tag stagger">Real examples</div>
+    <h2 class="stagger">What this looks like <span class="accent">for you</span></h2>
+    <div class="card-grid stagger">
+      <div class="card">
+        <div class="card-icon">🎨</div>
+        <div class="name">Jesse</div>
+        <div class="scenario">"Research the best product photography techniques"</div>
+        <div class="result">Gets 8 videos worth of composition, lighting, and styling tips condensed into one doc. Ready to reference on any shoot.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <div class="name">Edhel</div>
+        <div class="scenario">"Research Klaviyo email flows for ecommerce"</div>
+        <div class="result">Gets complete frameworks for welcome series, abandoned cart, post-purchase, with real examples and timing recommendations.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <div class="name">Wilbert</div>
+        <div class="scenario">"Research Meta ads scaling strategies"</div>
+        <div class="result">Gets bid strategies, audience targeting, creative testing frameworks. Proven tactics from top advertisers, organized by topic.</div>
+      </div>
+      <div class="card">
+        <div class="card-icon">✍️</div>
+        <div class="name">Shar</div>
+        <div class="scenario">"Research TikTok content for anime brands"</div>
+        <div class="result">Gets content formats, hook ideas, trending approaches. Specific to the anime niche, with examples she can adapt immediately.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 6: HOW TO USE IT ====== -->
+  <div class="slide" data-slide="5">
+    <div class="badge-live stagger">Live Now</div>
+    <h2 class="stagger">Using it is <span class="green">ridiculously easy</span></h2>
+    <p class="subtitle stagger" style="margin-bottom:8px">Just <span class="accent" style="font-weight:600">@mention @hermes</span> in any Slack channel. That's it.</p>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:28px;max-width:540px;width:100%" class="stagger">
+      <div class="code-block" style="display:block;text-align:left">
+        <span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;font-family:var(--font-body)">Research a topic</span>
+        @hermes research [topic] on YouTube
+      </div>
+      <div class="code-block" style="display:block;text-align:left">
+        <span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;font-family:var(--font-body)">Digest a channel</span>
+        @hermes digest everything from @[channel name]
+      </div>
+      <div class="code-block" style="display:block;text-align:left">
+        <span style="color:var(--text-muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:8px;font-family:var(--font-body)">Digest a specific video</span>
+        @hermes digest this video: [paste link]
+      </div>
+    </div>
+
+    <p class="subtitle stagger" style="margin-top:24px;font-size:14px">Hermes replies when the knowledge doc is ready. Usually a few minutes.</p>
+  </div>
+
+  <!-- ====== SLIDE 7: ALREADY TESTED ====== -->
+  <div class="slide" data-slide="6">
+    <div class="badge-live stagger">Already Tested</div>
+    <h2 class="stagger">This isn't a concept.<br><span class="green">It's working right now.</span></h2>
+    <p class="subtitle stagger">Hermes has already been tested in Slack and responded to a real question about the sprint board. The pipeline is live, connected, and ready for you to use.</p>
+
+    <div class="proof-card stagger">
+      <div class="proof-label">Actual Slack interaction</div>
+      <div class="proof-msg">
+        <span class="user-tag">Team member:</span> @hermes what's on the sprint board this week?<br><br>
+        <span class="bot-tag">Hermes:</span> Pulled up the sprint board. Here's what's active this week, broken down by person with status and story points...
+      </div>
+    </div>
+
+    <p class="subtitle stagger" style="margin-top:24px;font-size:14px">
+      Same flow works for YouTube research. Ask and Hermes delivers.
+    </p>
+  </div>
+
+  <!-- ====== SLIDE 8: GROW IT TOGETHER ====== -->
+  <div class="slide" data-slide="7">
+    <div class="tag stagger">Team knowledge</div>
+    <h2 class="stagger">The knowledge base grows<br><span class="accent">with all of you</span></h2>
+    <p class="subtitle stagger">Found a great YouTube creator in your area? Tell Hermes. It'll digest their best content and everyone benefits.</p>
+
+    <div class="panel stagger">
+      <p><strong>How to add a source:</strong></p>
+      <div class="code-block" style="display:block;text-align:left;margin:12px 0 16px">
+        @hermes add @[creator] to the knowledge base
+      </div>
+      <p style="margin-bottom:0">Think of it like building a shared brain. The more good sources you feed it, the smarter the whole team gets. You're the experts in your areas. You know who the best creators are.</p>
+    </div>
+  </div>
+
+  <!-- ====== SLIDE 9: CLOSING ====== -->
+  <div class="slide" data-slide="8">
+    <div class="tag stagger">The takeaway</div>
+    <h2 class="display stagger" style="font-size:clamp(2rem,4.5vw,3.5rem)">This isn't more work.<br>It's <span class="gradient-text">less</span> work.</h2>
+
+    <div class="stats-row stagger">
+      <div class="stat">
+        <div class="stat-value green counter-value" data-target="3" data-prefix="" data-suffix=" hrs">0 hrs</div>
+        <div class="stat-label">Saved per research task</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value green">Always</div>
+        <div class="stat-label">Searchable and reusable</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value green">Everyone</div>
+        <div class="stat-label">Benefits from each other</div>
+      </div>
+    </div>
+
+    <p class="subtitle stagger" style="margin-top:36px;max-width:480px">
+      Next time you need to learn something, try it. Just <span class="accent" style="font-weight:500">@mention @hermes</span> in any Slack channel and see what comes back.
+    </p>
+    <p class="stagger" style="margin-top:28px;font-size:14px;color:var(--text-muted)">
+      Questions? Ask in <span class="accent">#general</span> or DM Shay.
+    </p>
+  </div>
+
+</div>
+
+<!-- Navigation -->
+<button class="nav-arrow left" onclick="prevSlide()" aria-label="Previous slide">&#8592;</button>
+<button class="nav-arrow right" onclick="nextSlide()" aria-label="Next slide">&#8594;</button>
+<div class="nav-dots" id="navDots"></div>
+<div class="counter" id="counter"></div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let current = 0;
+  let animating = false;
+
+  // Build nav dots
+  const dotsEl = document.getElementById('navDots');
+  for(let i=0;i<total;i++){
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i===0?' active':'');
+    dot.onclick = () => goTo(i);
+    dotsEl.appendChild(dot);
+  }
+
+  function updateProgress(){
+    const pct = ((current)/(total-1))*100;
+    document.getElementById('progressBar').style.width = pct+'%';
+  }
+
+  function updateCounter(){
+    document.getElementById('counter').textContent = String(current+1).padStart(2,'0') + ' / ' + String(total).padStart(2,'0');
+  }
+
+  function updateDots(){
+    document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('active',i===current));
+  }
+
+  function resetStagger(slide){
+    slide.querySelectorAll('.stagger').forEach(el=>{
+      el.style.opacity='0';
+      el.style.transform='translateY(20px)';
+    });
+    // Force reflow
+    void slide.offsetHeight;
+    slide.querySelectorAll('.stagger').forEach(el=>{
+      el.style.opacity='';
+      el.style.transform='';
+    });
+  }
+
+  function goTo(index){
+    if(index===current||index<0||index>=total||animating) return;
+    animating = true;
+
+    // Reset stagger on the incoming slide
+    resetStagger(slides[index]);
+
+    slides[current].classList.remove('active');
+    slides[current].style.opacity='0';
+    slides[current].style.transform='translateY(-20px) scale(0.98)';
+
+    current = index;
+
+    // Small delay for exit
+    setTimeout(()=>{
+      // Reset all non-active
+      slides.forEach((s,i)=>{
+        if(i!==current){
+          s.style.opacity='0';
+          s.style.transform='translateY(30px) scale(0.98)';
+        }
+      });
+      slides[current].classList.add('active');
+      slides[current].style.opacity='';
+      slides[current].style.transform='';
+      animateCounters(slides[current]);
+      animating = false;
+    },150);
+
+    updateCounter();
+    updateDots();
+    updateProgress();
+  }
+
+  function nextSlide(){goTo(current+1)}
+  function prevSlide(){goTo(current-1)}
+
+  // Keyboard
+  document.addEventListener('keydown',e=>{
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();nextSlide()}
+    if(e.key==='ArrowLeft'){e.preventDefault();prevSlide()}
+  });
+
+  // Touch/swipe
+  let touchStartX=0,touchStartY=0;
+  document.addEventListener('touchstart',e=>{
+    touchStartX=e.touches[0].clientX;
+    touchStartY=e.touches[0].clientY;
+  });
+  document.addEventListener('touchend',e=>{
+    const dx=e.changedTouches[0].clientX-touchStartX;
+    const dy=e.changedTouches[0].clientY-touchStartY;
+    if(Math.abs(dx)>Math.abs(dy)&&Math.abs(dx)>50){
+      dx<0?nextSlide():prevSlide();
+    }
+  });
+
+  // Animated counters
+  function animateCounters(slide){
+    const counters = slide.querySelectorAll('.counter-value[data-target]');
+    counters.forEach(el=>{
+      const target = parseInt(el.dataset.target);
+      const suffix = el.dataset.suffix||'';
+      const prefix = el.dataset.prefix||'';
+      const duration = 1200;
+      const start = performance.now();
+
+      function tick(now){
+        const elapsed = now-start;
+        const progress = Math.min(elapsed/duration,1);
+        // Ease out cubic
+        const eased = 1-Math.pow(1-progress,3);
+        const val = Math.round(eased*target);
+        el.textContent = prefix+val+suffix;
+        if(progress<1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  // Init
+  updateCounter();
+  updateProgress();
+  animateCounters(slides[0]);
+
+  // Click navigation (click left/right half of screen)
+  document.addEventListener('click',e=>{
+    if(e.target.closest('.nav-arrow')||e.target.closest('.nav-dots')||e.target.closest('.code-block')||e.target.closest('.card')||e.target.closest('.panel')||e.target.closest('.proof-card')) return;
+    const x = e.clientX;
+    const w = window.innerWidth;
+    if(x>w*0.65) nextSlide();
+    else if(x<w*0.35) prevSlide();
+  });
+</script>
+
+</body>
+</html>
